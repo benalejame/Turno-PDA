@@ -50,7 +50,7 @@
 
         /* Contenedor de bloques semanales */
         .container {
-            margin-top: 90px; /* Un poco más de espacio inicial debajo del banner */
+            margin-top: 80px; /* Espacio inicial debajo del banner */
             width: 100%;
             max-width: 650px;
             padding: 12px;
@@ -66,8 +66,8 @@
             padding: 15px;
             margin-bottom: 25px;
             border: 1px solid #e9ecef;
-            /* SOLUCIÓN: Da margen al bloque entero para que al hacer scroll no se oculte tras el header */
-            scroll-margin-top: 110px; 
+            /* AJUSTE DE PRECISIÓN: Alineación exacta con la parte inferior del banner */
+            scroll-margin-top: 74px; 
         }
 
         .week-title {
@@ -205,7 +205,7 @@
 
     <script>
         const csvUrl = 'datos.csv';
-        let todayWeekBlockElement = null; // Guardará el contenedor de la semana actual
+        let todayWeekBlockElement = null;
 
         async function init() {
             try {
@@ -335,7 +335,6 @@
 
                 containerEl.appendChild(weekBlock);
 
-                // Si esta semana contiene el día de hoy, guardamos la referencia de todo el bloque
                 if (containsToday) {
                     todayWeekBlockElement = weekBlock;
                 }
@@ -344,16 +343,14 @@
             statusEl.style.display = 'none';
             containerEl.style.display = 'block';
 
-            // Ejecuta el scroll automático inicial sin animación para que cargue directamente colocado
             scrollToToday(false);
         }
 
-        // Modificado para hacer el foco al inicio del bloque semanal respetando los márgenes
         function scrollToToday(smooth = true) {
             if (todayWeekBlockElement) {
                 todayWeekBlockElement.scrollIntoView({ 
                     behavior: smooth ? 'smooth' : 'auto', 
-                    block: 'start' /* Alinea al inicio superior del contenedor semanal */
+                    block: 'start' 
                 });
             } else {
                 console.log("La semana actual no se encuentra entre los registros del CSV.");
