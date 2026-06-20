@@ -30,7 +30,7 @@
         }
 
         header {
-            background-color: var(--eci-green); /* Color del logo de El Corte Inglés */
+            background-color: var(--eci-green);
             color: white;
             width: 100%;
             position: fixed;
@@ -50,12 +50,12 @@
 
         /* Contenedor de bloques semanales */
         .container {
-            margin-top: 80px;
+            margin-top: 90px; /* Un poco más de espacio inicial debajo del banner */
             width: 100%;
             max-width: 650px;
             padding: 12px;
             box-sizing: border-box;
-            padding-bottom: 90px; /* Margen inferior extra para que el botón no tape contenido */
+            padding-bottom: 90px; /* Margen inferior para el botón flotante */
         }
 
         /* Cada bloque que contiene una semana */
@@ -66,6 +66,8 @@
             padding: 15px;
             margin-bottom: 25px;
             border: 1px solid #e9ecef;
+            /* SOLUCIÓN: Da margen al bloque entero para que al hacer scroll no se oculte tras el header */
+            scroll-margin-top: 110px; 
         }
 
         .week-title {
@@ -86,7 +88,6 @@
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid #e9ecef;
-            scroll-margin-top: 90px; /* Evita que el header tape la celda al hacer scroll */
         }
 
         /* Resalte de la línea del día actual */
@@ -180,7 +181,7 @@
         }
 
         .floating-btn:hover {
-            background-color: #00522c; /* Un verde un poco más oscuro al pasar el cursor o pulsar */
+            background-color: #00522c;
         }
 
         #status {
@@ -204,7 +205,7 @@
 
     <script>
         const csvUrl = 'datos.csv';
-        let todayRowElement = null; // Variable global para guardar la referencia al día de hoy
+        let todayWeekBlockElement = null; // Guardará el contenedor de la semana actual
 
         async function init() {
             try {
@@ -305,6 +306,8 @@
                 weekTitle.innerText = weekData.label;
                 weekBlock.appendChild(weekTitle);
 
+                let containsToday = false;
+
                 weekData.days.forEach(({ record, dateObj }) => {
                     const row = document.createElement('div');
                     row.className = 'day-row';
@@ -315,7 +318,7 @@
                     let isToday = (record.dateStr === todayStr);
                     if (isToday) {
                         row.classList.add('today');
-                        todayRowElement = row; // Guardamos la referencia global
+                        containsToday = true;
                     }
 
                     row.innerHTML = `
@@ -331,24 +334,29 @@
                 });
 
                 containerEl.appendChild(weekBlock);
+
+                // Si esta semana contiene el día de hoy, guardamos la referencia de todo el bloque
+                if (containsToday) {
+                    todayWeekBlockElement = weekBlock;
+                }
             });
 
             statusEl.style.display = 'none';
             containerEl.style.display = 'block';
 
-            // Ejecuta el scroll automático inicial al cargar la página
+            // Ejecuta el scroll automático inicial sin animación para que cargue directamente colocado
             scrollToToday(false);
         }
 
-        // Función encargada de llevar al usuario a la casilla actual
+        // Modificado para hacer el foco al inicio del bloque semanal respetando los márgenes
         function scrollToToday(smooth = true) {
-            if (todayRowElement) {
-                todayRowElement.scrollIntoView({ 
+            if (todayWeekBlockElement) {
+                todayWeekBlockElement.scrollIntoView({ 
                     behavior: smooth ? 'smooth' : 'auto', 
-                    block: 'center' 
+                    block: 'start' /* Alinea al inicio superior del contenedor semanal */
                 });
             } else {
-                console.log("El día de hoy no se encuentra entre los registros del CSV.");
+                console.log("La semana actual no se encuentra entre los registros del CSV.");
             }
         }
 
