@@ -15,7 +15,7 @@
             --today-border: #fcc419; /* Borde dorado/amarillo para resaltar */
             --card-bg: #ffffff;
             --text-color: #333;
-            --header-bg: #1a252f;
+            --eci-green: #006737;  /* Verde oficial de El Corte Inglés */
         }
 
         body {
@@ -30,7 +30,7 @@
         }
 
         header {
-            background-color: var(--header-bg);
+            background-color: var(--eci-green); /* Color del logo de El Corte Inglés */
             color: white;
             width: 100%;
             position: fixed;
@@ -45,6 +45,7 @@
             margin: 0;
             font-size: 1.3rem;
             letter-spacing: 0.5px;
+            font-weight: 700;
         }
 
         /* Contenedor de bloques semanales */
@@ -54,6 +55,7 @@
             max-width: 650px;
             padding: 12px;
             box-sizing: border-box;
+            padding-bottom: 90px; /* Margen inferior extra para que el botón no tape contenido */
         }
 
         /* Cada bloque que contiene una semana */
@@ -87,7 +89,7 @@
             scroll-margin-top: 90px; /* Evita que el header tape la celda al hacer scroll */
         }
 
-        /* RESALTE FUERTE: Línea del día actual más resaltada */
+        /* Resalte de la línea del día actual */
         .day-row.today {
             border: 2.5px solid var(--today-border);
             box-shadow: 0 0 12px rgba(252, 196, 25, 0.4);
@@ -151,6 +153,36 @@
             margin-top: 4px;
         }
 
+        /* BOTÓN FLOTANTE HOY */
+        .floating-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background-color: var(--eci-green);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 14px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 103, 55, 0.4);
+            cursor: pointer;
+            z-index: 200;
+            transition: transform 0.2s, background-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .floating-btn:active {
+            transform: scale(0.95);
+        }
+
+        .floating-btn:hover {
+            background-color: #00522c; /* Un verde un poco más oscuro al pasar el cursor o pulsar */
+        }
+
         #status {
             text-align: center;
             margin-top: 120px;
@@ -162,14 +194,17 @@
 <body>
 
     <header>
-        <h1>Planificación Semanal de Turnos</h1>
+        <h1>Turnos de PDA</h1>
     </header>
 
     <div id="status">Cargando planificación...</div>
     <div class="container" id="app-container" style="display: none;"></div>
 
+    <button class="floating-btn" id="btn-hoy" onclick="scrollToToday()">HOY</button>
+
     <script>
         const csvUrl = 'datos.csv';
+        let todayRowElement = null; // Variable global para guardar la referencia al día de hoy
 
         async function init() {
             try {
@@ -189,14 +224,11 @@
             const lines = text.split(/\r?\n/);
             if (lines.length <= 1) return [];
 
-            // SOLUCIÓN DEFINITIVA: Leemos por orden fijo de columnas eliminando validación estricta de texto.
-            // Posición 0 = FECHA, Posición 1 = MAÑANAS, Posición 2 = TARDES
             const idxFecha = 0;
             const idxMananas = 1;
             const idxTardes = 2;
 
             const records = [];
-            // Empezamos en la línea 1 para saltar la fila de títulos de cabecera
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
@@ -213,10 +245,9 @@
             return records;
         }
 
-        // Calcula el número de la semana para organizar los bloques dinámicamente
         function getWeekIdentifier(date) {
             const target = new Date(date.valueOf());
-            const dayNr = (date.getDay() + 6) % 7; // Lunes = 0, Domingo = 6
+            const dayNr = (date.getDay() + 6) % 7; 
             target.setDate(target.getDate() - dayNr + 3);
             const firstThursday = target.valueOf();
             target.setMonth(0, 1);
@@ -238,22 +269,17 @@
             const statusEl = document.getElementById('status');
             
             const todayStr = getLocalDateString(new Date());
-            let todayRowElement = null;
 
-            // Orden cronológico estricto
             records.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
 
-            // Estructurar mapa de semanas
             const weeksMap = {};
 
             records.forEach(record => {
-                // Filtrar que la fila tenga una fecha estructurada válida YYYY-MM-DD
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(record.dateStr)) return;
                 
                 const dateObj = new Date(record.dateStr + 'T00:00:00');
                 const dayOfWeek = dateObj.getDay(); 
 
-                // Condición: Solo de Lunes (1) a Sábado (6). Ignoramos Domingos (0)
                 if (dayOfWeek === 0) return;
 
                 const { year, week } = getWeekIdentifier(dateObj);
@@ -268,7 +294,6 @@
                 weeksMap[weekKey].days.push({ record, dateObj });
             });
 
-            // Renderizar la interfaz agrupada
             Object.keys(weeksMap).sort().forEach(weekKey => {
                 const weekData = weeksMap[weekKey];
                 
@@ -284,14 +309,13 @@
                     const row = document.createElement('div');
                     row.className = 'day-row';
 
-                    // Extracción del nombre del día (ej: "lunes") y número de fecha
                     const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
                     const dayDateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 
                     let isToday = (record.dateStr === todayStr);
                     if (isToday) {
                         row.classList.add('today');
-                        todayRowElement = row;
+                        todayRowElement = row; // Guardamos la referencia global
                     }
 
                     row.innerHTML = `
@@ -312,11 +336,19 @@
             statusEl.style.display = 'none';
             containerEl.style.display = 'block';
 
-            // Auto-scroll centrado en el día de hoy al cargar la pantalla
+            // Ejecuta el scroll automático inicial al cargar la página
+            scrollToToday(false);
+        }
+
+        // Función encargada de llevar al usuario a la casilla actual
+        function scrollToToday(smooth = true) {
             if (todayRowElement) {
-                setTimeout(() => {
-                    todayRowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 300);
+                todayRowElement.scrollIntoView({ 
+                    behavior: smooth ? 'smooth' : 'auto', 
+                    block: 'center' 
+                });
+            } else {
+                console.log("El día de hoy no se encuentra entre los registros del CSV.");
             }
         }
 
