@@ -7,12 +7,12 @@
     <style>
         :root {
             --primary-blue: #007bff;
-            --blue-cell: #e6f2ff; /* Sombreado azul claro */
+            --blue-cell: #e6f2ff;
             --blue-border: #b3d7ff;
-            --green-cell: #e6f7ed; /* Sombreado verde claro */
+            --green-cell: #e6f7ed;
             --green-border: #b3f0cc;
-            --today-bg: #fff9db;   /* Fondo sutil para el día de hoy */
-            --today-border: #fcc419; /* Borde dorado/amarillo para resaltar */
+            --today-bg: #fff9db;
+            --today-border: #fcc419;
             --card-bg: #ffffff;
             --text-color: #333;
             --header-bg: #1a252f;
@@ -47,7 +47,6 @@
             letter-spacing: 0.5px;
         }
 
-        /* Contenedor de bloques semanales */
         .container {
             margin-top: 80px;
             width: 100%;
@@ -56,7 +55,6 @@
             box-sizing: border-box;
         }
 
-        /* Cada bloque que contiene una semana */
         .week-block {
             background: #ffffff;
             border-radius: 12px;
@@ -76,7 +74,6 @@
             text-transform: capitalize;
         }
 
-        /* Estructura de filas simulando celdas */
         .day-row {
             display: table;
             width: 100%;
@@ -84,10 +81,9 @@
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid #e9ecef;
-            scroll-margin-top: 90px; /* Evita que el header tape la celda al hacer scroll */
+            scroll-margin-top: 90px;
         }
 
-        /* Resalte de la línea del día actual */
         .day-row.today {
             border: 2.5px solid var(--today-border);
             box-shadow: 0 0 12px rgba(252, 196, 25, 0.4);
@@ -101,7 +97,6 @@
             font-size: 0.95rem;
         }
 
-        /* Columna 1: Fecha y Día de la semana */
         .cell-date {
             width: 30%;
             background-color: #f1f3f5;
@@ -122,7 +117,6 @@
             background-color: var(--today-bg);
         }
 
-        /* Columna 2: MAÑANAS (Sombreado Azul Claro) */
         .cell-morning {
             width: 35%;
             background-color: var(--blue-cell);
@@ -131,7 +125,6 @@
             color: #1c3d5a;
         }
 
-        /* Columna 3: TARDES (Sombreado Verde Claro) */
         .cell-afternoon {
             width: 35%;
             background-color: var(--green-cell);
@@ -139,7 +132,6 @@
             color: #1e4620;
         }
 
-        /* Etiqueta flotante para el día actual */
         .today-tag {
             background-color: var(--today-border);
             color: #212529;
@@ -189,8 +181,11 @@
             const lines = text.split(/\r?\n/);
             if (lines.length === 0) return [];
 
-            // CORRECCIÓN AQUÍ: Se separa por punto y coma (;) en vez de coma (,)
-            const headers = lines[0].split(';').map(h => h.trim().toUpperCase());
+            // Limpieza estricta de cualquier residuo o carácter de control invisible en la cabecera
+            const headers = lines[0].split(';').map(h => 
+                h.trim().replace(/[^\x20-\x7E]/g, '').toUpperCase()
+            );
+            
             const idxFecha = headers.indexOf('FECHA');
             const idxMananas = headers.indexOf('MAÑANAS');
             const idxTardes = headers.indexOf('TARDES');
@@ -204,11 +199,10 @@
                 const line = lines[i].trim();
                 if (!line) continue;
 
-                // CORRECCIÓN AQUÍ: Separador cambiado a ';'
                 const columns = line.split(';');
                 if (columns.length > Math.max(idxFecha, idxMananas, idxTardes)) {
                     records.push({
-                        dateStr: columns[idxFecha].trim(),
+                        dateStr: columns[idxFecha].trim().replace(/[^\x20-\x7E]/g, ''),
                         manana: columns[idxMananas].trim(),
                         tarde: columns[idxTardes].trim()
                     });
@@ -217,10 +211,9 @@
             return records;
         }
 
-        // Calcula el número de la semana para organizar los bloques dinámicamente
         function getWeekIdentifier(date) {
             const target = new Date(date.valueOf());
-            const dayNr = (date.getDay() + 6) % 7; // Lunes = 0, Domingo = 6
+            const dayNr = (date.getDay() + 6) % 7; 
             target.setDate(target.getDate() - dayNr + 3);
             const firstThursday = target.valueOf();
             target.setMonth(0, 1);
@@ -244,17 +237,17 @@
             const todayStr = getLocalDateString(new Date());
             let todayRowElement = null;
 
-            // Orden cronológico estricto
             records.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
 
-            // Estructurar mapa de semanas
             const weeksMap = {};
 
             records.forEach(record => {
+                // Asegurar formato correcto de fecha
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(record.dateStr)) return;
+                
                 const dateObj = new Date(record.dateStr + 'T00:00:00');
                 const dayOfWeek = dateObj.getDay(); 
 
-                // Condición: Solo mostrar de Lunes (1) a Sábado (6). Ignoramos Domingos (0)
                 if (dayOfWeek === 0) return;
 
                 const { year, week } = getWeekIdentifier(dateObj);
@@ -269,7 +262,6 @@
                 weeksMap[weekKey].days.push({ record, dateObj });
             });
 
-            // Renderizar la interfaz agrupada
             Object.keys(weeksMap).sort().forEach(weekKey => {
                 const weekData = weeksMap[weekKey];
                 
@@ -285,7 +277,6 @@
                     const row = document.createElement('div');
                     row.className = 'day-row';
 
-                    // Extracción del nombre del día (ej: "lunes") y número de fecha
                     const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
                     const dayDateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 
@@ -313,7 +304,6 @@
             statusEl.style.display = 'none';
             containerEl.style.display = 'block';
 
-            // Auto-scroll centrado en el día de hoy al cargar la pantalla
             if (todayRowElement) {
                 setTimeout(() => {
                     todayRowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
