@@ -1,0 +1,326 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda Semanal</title>
+    <style>
+        :root {
+            --primary-blue: #007bff;
+            --blue-cell: #e6f2ff; /* Sombreado azul claro */
+            --blue-border: #b3d7ff;
+            --green-cell: #e6f7ed; /* Sombreado verde claro */
+            --green-border: #b3f0cc;
+            --today-bg: #fff9db;   /* Fondo sutil para el día de hoy */
+            --today-border: #fcc419; /* Borde dorado/amarillo para resaltar */
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --header-bg: #1a252f;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            background-color: var(--header-bg);
+            color: white;
+            width: 100%;
+            position: fixed;
+            top: 0;
+            z-index: 100;
+            text-align: center;
+            padding: 15px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.3rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* Contenedor de bloques semanales */
+        .container {
+            margin-top: 80px;
+            width: 100%;
+            max-width: 650px;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        /* Cada bloque que contiene una semana */
+        .week-block {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            padding: 15px;
+            margin-bottom: 25px;
+            border: 1px solid #e9ecef;
+        }
+
+        .week-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #dee2e6;
+            text-transform: capitalize;
+        }
+
+        /* Estructura de filas simulando celdas */
+        .day-row {
+            display: table;
+            width: 100%;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            scroll-margin-top: 90px; /* Evita que el header tape la celda al hacer scroll */
+        }
+
+        /* REBALTE CRÍTICO: Línea del día actual más resaltada */
+        .day-row.today {
+            border: 2.5px solid var(--today-border);
+            box-shadow: 0 0 12px rgba(252, 196, 25, 0.4);
+            transform: scale(1.01);
+        }
+
+        .cell {
+            display: table-cell;
+            vertical-align: middle;
+            padding: 12px 10px;
+            font-size: 0.95rem;
+        }
+
+        /* Columna 1: Fecha y Día de la semana */
+        .cell-date {
+            width: 30%;
+            background-color: #f1f3f5;
+            font-weight: 600;
+            color: #343a40;
+            border-right: 1px solid #dee2e6;
+        }
+        
+        .cell-date .day-name {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #6c757d;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .day-row.today .cell-date {
+            background-color: var(--today-bg);
+        }
+
+        /* Columna 2: MAÑANAS (Sombreado Azul Claro) */
+        .cell-morning {
+            width: 35%;
+            background-color: var(--blue-cell);
+            border-right: 1px solid var(--blue-border);
+            font-weight: 500;
+            color: #1c3d5a;
+        }
+
+        /* Columna 3: TARDES (Sombreado Verde Claro) */
+        .cell-afternoon {
+            width: 35%;
+            background-color: var(--green-cell);
+            font-weight: 500;
+            color: #1e4620;
+        }
+
+        /* Etiqueta flotante para el día actual */
+        .today-tag {
+            background-color: var(--today-border);
+            color: #212529;
+            font-size: 0.7rem;
+            font-weight: bold;
+            padding: 2px 5px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+
+        #status {
+            text-align: center;
+            margin-top: 120px;
+            font-weight: bold;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Planificación Semanal de Turnos</h1>
+    </header>
+
+    <div id="status">Cargando planificación...</div>
+    <div class="container" id="app-container" style="display: none;"></div>
+
+    <script>
+        const csvUrl = 'datos.csv';
+
+        async function init() {
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) throw new Error('No se pudo acceder al archivo CSV');
+                
+                const dataText = await response.text();
+                const records = parseCSV(dataText);
+                
+                renderWeeks(records);
+            } catch (error) {
+                document.getElementById('status').innerText = 'Error: ' + error.message;
+            }
+        }
+
+        function parseCSV(text) {
+            const lines = text.split(/\r?\n/);
+            if (lines.length === 0) return [];
+
+            // Procesar cabeceras exactas indicadas por el usuario
+            const headers = lines[0].split(',').map(h => h.trim().toUpperCase());
+            const idxFecha = headers.indexOf('FECHA');
+            const idxMananas = headers.indexOf('MAÑANAS');
+            const idxTardes = headers.indexOf('TARDES');
+
+            if (idxFecha === -1 || idxMananas === -1 || idxTardes === -1) {
+                throw new Error("El CSV debe tener exactamente las columnas: FECHA, MAÑANAS, TARDES");
+            }
+
+            const records = [];
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const columns = line.split(',');
+                if (columns.length > Math.max(idxFecha, idxMananas, idxTardes)) {
+                    records.push({
+                        dateStr: columns[idxFecha].trim(),
+                        manana: columns[idxMananas].trim(),
+                        tarde: columns[idxTardes].trim()
+                    });
+                }
+            }
+            return records;
+        }
+
+        // Calcula el número de la semana para organizar los bloques dinámicamente
+        function getWeekIdentifier(date) {
+            const target = new Date(date.valueOf());
+            const dayNr = (date.getDay() + 6) % 7; // Lunes = 0, Domingo = 6
+            target.setDate(target.getDate() - dayNr + 3);
+            const firstThursday = target.valueOf();
+            target.setMonth(0, 1);
+            if (target.getDay() !== 4) {
+                target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
+            }
+            const weekNum = 1 + Math.ceil((firstThursday - target) / 604800000);
+            return { year: target.getFullYear(), week: weekNum };
+        }
+
+        function getLocalDateString(date) {
+            const offset = date.getTimezoneOffset();
+            const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+            return localDate.toISOString().split('T')[0];
+        }
+
+        function renderWeeks(records) {
+            const containerEl = document.getElementById('app-container');
+            const statusEl = document.getElementById('status');
+            
+            const todayStr = getLocalDateString(new Date());
+            let todayRowElement = null;
+
+            // Orden cronológico estricto
+            records.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
+
+            // Estructurar mapa de semanas
+            const weeksMap = {};
+
+            records.forEach(record => {
+                const dateObj = new Date(record.dateStr + 'T00:00:00');
+                const dayOfWeek = dateObj.getDay(); 
+
+                // Condición: Solo mostrar de Lunes (1) a Sábado (6). Ignoramos Domingos (0)
+                if (dayOfWeek === 0) return;
+
+                const { year, week } = getWeekIdentifier(dateObj);
+                const weekKey = `${year}-W${week}`;
+
+                if (!weeksMap[weekKey]) {
+                    weeksMap[weekKey] = {
+                        label: `Semana ${week} — Año ${year}`,
+                        days: []
+                    };
+                }
+                weeksMap[weekKey].days.push({ record, dateObj });
+            });
+
+            // Renderizar la interfaz agrupada
+            Object.keys(weeksMap).sort().forEach(weekKey => {
+                const weekData = weeksMap[weekKey];
+                
+                const weekBlock = document.createElement('div');
+                weekBlock.className = 'week-block';
+
+                const weekTitle = document.createElement('div');
+                weekTitle.className = 'week-title';
+                weekTitle.innerText = weekData.label;
+                weekBlock.appendChild(weekTitle);
+
+                weekData.days.forEach(({ record, dateObj }) => {
+                    const row = document.createElement('div');
+                    row.className = 'day-row';
+
+                    // Extracción del nombre del día (ej: "lunes") y número de fecha
+                    const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
+                    const dayDateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+
+                    let isToday = (record.dateStr === todayStr);
+                    if (isToday) {
+                        row.classList.add('today');
+                        todayRowElement = row;
+                    }
+
+                    row.innerHTML = `
+                        <div class="cell cell-date">
+                            <span class="day-name">${dayName}</span>
+                            <div>${dayDateStr}</div>
+                            ${isToday ? '<span class="today-tag">HOY</span>' : ''}
+                        </div>
+                        <div class="cell cell-morning">${record.manana || '-'}</div>
+                        <div class="cell cell-afternoon">${record.tarde || '-'}</div>
+                    `;
+                    weekBlock.appendChild(row);
+                });
+
+                containerEl.appendChild(weekBlock);
+            });
+
+            statusEl.style.display = 'none';
+            containerEl.style.display = 'block';
+
+            // Auto-scroll centrado en el día de hoy al cargar la pantalla
+            if (todayRowElement) {
+                setTimeout(() => {
+                    todayRowElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
