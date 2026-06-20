@@ -87,7 +87,7 @@
             scroll-margin-top: 90px; /* Evita que el header tape la celda al hacer scroll */
         }
 
-        /* REBALTE CRÍTICO: Línea del día actual más resaltada */
+        /* Resalte de la línea del día actual */
         .day-row.today {
             border: 2.5px solid var(--today-border);
             box-shadow: 0 0 12px rgba(252, 196, 25, 0.4);
@@ -189,14 +189,14 @@
             const lines = text.split(/\r?\n/);
             if (lines.length === 0) return [];
 
-            // Procesar cabeceras exactas indicadas por el usuario
-            const headers = lines[0].split(',').map(h => h.trim().toUpperCase());
+            // CORRECCIÓN AQUÍ: Se separa por punto y coma (;) en vez de coma (,)
+            const headers = lines[0].split(';').map(h => h.trim().toUpperCase());
             const idxFecha = headers.indexOf('FECHA');
             const idxMananas = headers.indexOf('MAÑANAS');
             const idxTardes = headers.indexOf('TARDES');
 
             if (idxFecha === -1 || idxMananas === -1 || idxTardes === -1) {
-                throw new Error("El CSV debe tener exactamente las columnas: FECHA, MAÑANAS, TARDES");
+                throw new Error("El CSV debe tener exactamente las columnas separadas por ';': FECHA;MAÑANAS;TARDES");
             }
 
             const records = [];
@@ -204,7 +204,8 @@
                 const line = lines[i].trim();
                 if (!line) continue;
 
-                const columns = line.split(',');
+                // CORRECCIÓN AQUÍ: Separador cambiado a ';'
+                const columns = line.split(';');
                 if (columns.length > Math.max(idxFecha, idxMananas, idxTardes)) {
                     records.push({
                         dateStr: columns[idxFecha].trim(),
