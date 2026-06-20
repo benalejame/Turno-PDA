@@ -17,6 +17,7 @@
             --card-bg: #ffffff;
             --text-color: #333;
             --eci-green: #006737;  /* Verde oficial de El Corte Inglés */
+            --solid-blue: #0056b3; /* Azul sólido para el botón de filtro */
         }
 
         body {
@@ -56,10 +57,10 @@
             max-width: 650px;
             padding: 12px;
             box-sizing: border-box;
-            padding-bottom: 100px; /* Espacio extra abajo para que los botones no tapen contenido */
+            padding-bottom: 100px; 
         }
 
-        /* Cada bloque que contiene una semana o lista de filtro */
+        /* Cada bloque que contiene una semana o un año de filtro */
         .week-block {
             background: #ffffff;
             border-radius: 12px;
@@ -88,9 +89,10 @@
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid #e9ecef;
+            scroll-margin-top: 140px; 
         }
 
-        /* Resalte de la línea del día actual */
+        /* Resalte de la línea del día actual o más próximo */
         .day-row.today {
             border: 2.5px solid var(--today-border);
             box-shadow: 0 0 12px rgba(252, 196, 25, 0.4);
@@ -142,7 +144,14 @@
             color: #1e4620;
         }
 
-        /* Etiqueta para el día actual */
+        /* Clase para atenuar de forma sutil el nombre del compañero no seleccionado */
+        .muted-worker {
+            color: #7f8c8d;
+            font-weight: normal;
+            opacity: 0.65;
+        }
+
+        /* Etiqueta para el día actual o próximo */
         .today-tag {
             background-color: var(--today-border);
             color: #212529;
@@ -159,22 +168,21 @@
             position: fixed;
             bottom: 25px;
             width: 100%;
-            max-width: 630px; /* Se acopla milimétricamente al ancho del listado restando paddings */
+            max-width: 630px; 
             display: flex;
-            justify-content: space-between; /* El filtro a la izquierda, el botón HOY a la derecha */
+            justify-content: space-between; 
             align-items: center;
-            pointer-events: none; /* Evita bloquear clics en la web fuera de los botones */
+            pointer-events: none; 
             z-index: 200;
             padding: 0 10px;
             box-sizing: border-box;
         }
 
-        /* Forzar que los elementos dentro del wrapper vuelvan a recibir clics */
         .controls-wrapper * {
             pointer-events: auto;
         }
 
-        /* BOTÓN FLOTANTE HOY (Alineado a la derecha del contenedor) */
+        /* BOTÓN FLOTANTE HOY */
         .floating-btn {
             background-color: var(--eci-green);
             color: white;
@@ -197,24 +205,55 @@
             background-color: #00522c;
         }
 
-        /* NUEVO SELECTOR DE FILTRO (Alineado a la izquierda del contenedor) */
+        /* CONTENEDOR ESTILIZADO PARA EL SELECTOR AZUL DE FILTRO */
+        .filter-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* BOTÓN DE FILTRO AZUL SÓLIDO */
         .filter-select {
-            background-color: white;
-            color: #333;
-            border: 2px solid var(--eci-green);
+            background-color: var(--solid-blue);
+            color: white;
+            border: none;
             border-radius: 50px;
-            padding: 12px 20px;
-            font-size: 0.95rem;
+            padding: 14px 28px 14px 20px;
+            font-size: 1rem;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(0, 86, 179, 0.3);
             outline: none;
             cursor: pointer;
             max-width: 220px;
-            transition: border-color 0.2s;
+            appearance: none; 
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            transition: background-color 0.2s, transform 0.2s;
         }
 
-        .filter-select:focus {
-            border-color: #fcc419;
+        .filter-select:active {
+            transform: scale(0.95);
+        }
+
+        .filter-select:hover {
+            background-color: #004085;
+        }
+
+        .filter-container::after {
+            content: '▼';
+            font-size: 0.7rem;
+            color: white;
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        .filter-select option {
+            background-color: white;
+            color: #333;
+            font-weight: normal;
         }
 
         #status {
@@ -236,9 +275,11 @@
     <div class="container" id="app-container" style="display: none;"></div>
 
     <div class="controls-wrapper" id="controls-panel" style="display: none;">
-        <select class="filter-select" id="worker-filter" onchange="filterWorker(this.value)">
-            <option value="ALL">🔍 Mostrar Todos</option>
-        </select>
+        <div class="filter-container">
+            <select class="filter-select" id="worker-filter" onchange="filterWorker(this.value)">
+                <option value="ALL">Filtro</option>
+            </select>
+        </div>
 
         <button class="floating-btn" id="btn-hoy" onclick="scrollToToday()">HOY</button>
     </div>
@@ -246,7 +287,6 @@
     <script>
         const csvUrl = 'datos.csv';
         
-        // Almacenamiento global de datos procesados
         let globalRecords = [];
         let todayStr = "";
         let todayWeekBlockElement = null; 
@@ -259,24 +299,19 @@
                 const dataText = await response.text();
                 globalRecords = parseCSV(dataText);
                 
-                // Obtener fecha de hoy en formato local YYYY-MM-DD
                 const offset = new Date().getTimezoneOffset();
                 const localDate = new Date(new Date().getTime() - (offset * 60 * 1000));
                 todayStr = localDate.toISOString().split('T')[0];
 
-                // Ordenar registros por fecha cronológica antes de hacer nada
                 globalRecords.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
 
-                // Poblar el filtro desplegable y renderizar por defecto
                 populateFilter(globalRecords);
                 renderWeeks(globalRecords);
                 
-                // Mostrar la interfaz una vez procesado todo
                 document.getElementById('status').style.display = 'none';
                 document.getElementById('app-container').style.display = 'block';
                 document.getElementById('controls-panel').style.display = 'flex';
 
-                // Auto-scroll inicial a la semana en curso
                 scrollToToday(false);
             } catch (error) {
                 document.getElementById('status').innerText = 'Error: ' + error.message;
@@ -308,7 +343,6 @@
             return records;
         }
 
-        // Extrae nombres únicos del CSV para armar el menú del filtro automáticamente
         function populateFilter(records) {
             const filterEl = document.getElementById('worker-filter');
             const namesSet = new Set();
@@ -318,7 +352,6 @@
                 if (r.tarde && r.tarde !== '-') namesSet.add(r.tarde);
             });
 
-            // Ordenar alfabéticamente
             const sortedNames = Array.from(namesSet).sort((a, b) => a.localeCompare(b));
 
             sortedNames.forEach(name => {
@@ -342,10 +375,9 @@
             return { year: target.getFullYear(), week: weekNum };
         }
 
-        // RENDERIZADO 1: Vista normal agrupada por bloques semanales (Lunes a Sábado)
         function renderWeeks(records) {
             const containerEl = document.getElementById('app-container');
-            containerEl.innerHTML = ""; // Limpiar pantalla
+            containerEl.innerHTML = ""; 
             todayWeekBlockElement = null;
 
             const weeksMap = {};
@@ -356,7 +388,7 @@
                 const dateObj = new Date(record.dateStr + 'T00:00:00');
                 const dayOfWeek = dateObj.getDay(); 
 
-                if (dayOfWeek === 0) return; // Omitir domingos
+                if (dayOfWeek === 0) return; 
 
                 const { year, week } = getWeekIdentifier(dateObj);
                 const weekKey = `${year}-W${week}`;
@@ -416,69 +448,105 @@
             });
         }
 
-        // RENDERIZADO 2: Vista filtrada por un empleado específico
+        // RENDERIZADO FILTRADO: Agrupa por años, resalta el más cercano y atenúa al compañero
         function renderFilteredList(workerName) {
             const containerEl = document.getElementById('app-container');
-            containerEl.innerHTML = ""; // Limpiar pantalla
+            containerEl.innerHTML = ""; 
 
-            const block = document.createElement('div');
-            block.className = 'week-block';
-
-            const title = document.createElement('div');
-            title.className = 'week-title';
-            title.innerText = `Días asignados a: ${workerName}`;
-            block.appendChild(title);
-
-            // Filtrar registros donde aparezca el nombre seleccionado
             const filteredRecords = globalRecords.filter(r => r.manana === workerName || r.tarde === workerName);
 
             if (filteredRecords.length === 0) {
-                block.innerHTML += `<div style="padding:15px; text-align:center; color:#777;">No se encontraron turnos asignados.</div>`;
-                containerEl.appendChild(block);
+                const emptyBlock = document.createElement('div');
+                emptyBlock.className = 'week-block';
+                emptyBlock.innerHTML = `<div style="padding:15px; text-align:center; color:#777;">No se encontraron turnos asignados.</div>`;
+                containerEl.appendChild(emptyBlock);
                 return;
             }
 
+            const yearsMap = {};
             filteredRecords.forEach(record => {
-                const dateObj = new Date(record.dateStr + 'T00:00:00');
-                const row = document.createElement('div');
-                row.className = 'day-row';
-
-                const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
-                const dayDateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-
-                let isToday = (record.dateStr === todayStr);
-                if (isToday) row.classList.add('today');
-
-                // Si la persona está en mañanas o tardes, se resalta levemente su nombre en negrita
-                const displayManana = record.manana === workerName ? `<strong>${record.manana}</strong>` : record.manana;
-                const displayTarde = record.tarde === workerName ? `<strong>${record.tarde}</strong>` : record.tarde;
-
-                row.innerHTML = `
-                    <div class="cell cell-date">
-                        <span class="day-name">${dayName}</span>
-                        <div>${dayDateStr}</div>
-                        ${isToday ? '<span class="today-tag">HOY</span>' : ''}
-                    </div>
-                    <div class="cell cell-morning">${displayManana || '-'}</div>
-                    <div class="cell cell-afternoon">${displayTarde || '-'}</div>
-                `;
-                block.appendChild(row);
+                const year = record.dateStr.split('-')[0];
+                if (!yearsMap[year]) {
+                    yearsMap[year] = [];
+                }
+                yearsMap[year].push(record);
             });
 
-            containerEl.appendChild(block);
+            const currentTimestamp = new Date(todayStr + 'T00:00:00').getTime();
+            let closestRowElement = null;
+            let minTimeDifference = Infinity;
+
+            Object.keys(yearsMap).sort().forEach(year => {
+                const yearBlock = document.createElement('div');
+                yearBlock.className = 'week-block';
+
+                const yearTitle = document.createElement('div');
+                yearTitle.className = 'week-title';
+                yearTitle.innerText = `Año ${year} — Asignaciones`;
+                yearBlock.appendChild(yearTitle);
+
+                yearsMap[year].forEach(record => {
+                    const dateObj = new Date(record.dateStr + 'T00:00:00');
+                    const row = document.createElement('div');
+                    row.className = 'day-row';
+
+                    const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
+                    const dayDateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+
+                    const rowTimestamp = dateObj.getTime();
+                    const timeDiff = Math.abs(rowTimestamp - currentTimestamp);
+
+                    let isToday = (record.dateStr === todayStr);
+
+                    if (timeDiff < minTimeDifference) {
+                        minTimeDifference = timeDiff;
+                        closestRowElement = row;
+                    }
+
+                    // MEJORA: El nombre no elegido se envuelve en la clase 'muted-worker' para atenuarlo
+                    const displayManana = record.manana === workerName ? 
+                        `<strong>${record.manana}</strong>` : 
+                        `<span class="muted-worker">${record.manana || '-'}</span>`;
+                        
+                    const displayTarde = record.tarde === workerName ? 
+                        `<strong>${record.tarde}</strong>` : 
+                        `<span class="muted-worker">${record.tarde || '-'}</span>`;
+
+                    row.innerHTML = `
+                        <div class="cell cell-date">
+                            <span class="day-name">${dayName}</span>
+                            <div>${dayDateStr}</div>
+                            ${isToday ? '<span class="today-tag">HOY</span>' : ''}
+                        </div>
+                        <div class="cell cell-morning">${displayManana}</div>
+                        <div class="cell cell-afternoon">${displayTarde}</div>
+                    `;
+                    yearBlock.appendChild(row);
+                });
+
+                containerEl.appendChild(yearBlock);
+            });
+
+            if (closestRowElement) {
+                closestRowElement.classList.add('today'); 
+                setTimeout(() => {
+                    closestRowElement.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                }, 300);
+            }
         }
 
-        // Gestiona el cambio del selector
         function filterWorker(value) {
             const btnHoy = document.getElementById('btn-hoy');
             if (value === 'ALL') {
-                btnHoy.style.display = 'block'; // Mostrar botón HOY
-                renderWeeks(globalRecords);     // Regresar a vista semanal organizada
+                btnHoy.style.display = 'block'; 
+                renderWeeks(globalRecords);     
                 scrollToToday(true);
             } else {
-                btnHoy.style.display = 'none';  // Ocultar botón HOY en vista de filtro individual
-                renderFilteredList(value);      // Generar listado del empleado
-                window.scrollTo({ top: 0, behavior: 'smooth' }); // Llevar arriba al filtrar
+                btnHoy.style.display = 'none';  
+                renderFilteredList(value);      
             }
         }
 
