@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turnos PDA</title>
-<link rel="icon" type="image/png" href="favicon.png">
-
+    <title>Turnos de PDA</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     <style>
         :root {
             --primary-blue: #007bff;
@@ -50,17 +49,17 @@
             font-weight: 700;
         }
 
-        /* Contenedor de bloques semanales */
+        /* Contenedor de bloques semanales y filtrados */
         .container {
-            margin-top: 80px; /* Espacio inicial debajo del banner */
+            margin-top: 80px; 
             width: 100%;
             max-width: 650px;
             padding: 12px;
             box-sizing: border-box;
-            padding-bottom: 90px; /* Margen inferior para el botón flotante */
+            padding-bottom: 100px; /* Espacio extra abajo para que los botones no tapen contenido */
         }
 
-        /* Cada bloque que contiene una semana */
+        /* Cada bloque que contiene una semana o lista de filtro */
         .week-block {
             background: #ffffff;
             border-radius: 12px;
@@ -68,7 +67,6 @@
             padding: 15px;
             margin-bottom: 25px;
             border: 1px solid #e9ecef;
-            /* AJUSTE DE PRECISIÓN: Alineación exacta con la parte inferior del banner */
             scroll-margin-top: 74px; 
         }
 
@@ -156,11 +154,28 @@
             margin-top: 4px;
         }
 
-        /* BOTÓN FLOTANTE HOY */
-        .floating-btn {
+        /* CONTENEDOR DE BOTONES FIJOS ABAJO (CONTROL DE MÁRGENES EN PC) */
+        .controls-wrapper {
             position: fixed;
             bottom: 25px;
-            right: 25px;
+            width: 100%;
+            max-width: 630px; /* Se acopla milimétricamente al ancho del listado restando paddings */
+            display: flex;
+            justify-content: space-between; /* El filtro a la izquierda, el botón HOY a la derecha */
+            align-items: center;
+            pointer-events: none; /* Evita bloquear clics en la web fuera de los botones */
+            z-index: 200;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        /* Forzar que los elementos dentro del wrapper vuelvan a recibir clics */
+        .controls-wrapper * {
+            pointer-events: auto;
+        }
+
+        /* BOTÓN FLOTANTE HOY (Alineado a la derecha del contenedor) */
+        .floating-btn {
             background-color: var(--eci-green);
             color: white;
             border: none;
@@ -169,13 +184,9 @@
             font-size: 1rem;
             font-weight: bold;
             letter-spacing: 0.5px;
-            box-shadow: 0 4px 15px rgba(0, 103, 55, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 103, 55, 0.3);
             cursor: pointer;
-            z-index: 200;
             transition: transform 0.2s, background-color 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         .floating-btn:active {
@@ -184,6 +195,26 @@
 
         .floating-btn:hover {
             background-color: #00522c;
+        }
+
+        /* NUEVO SELECTOR DE FILTRO (Alineado a la izquierda del contenedor) */
+        .filter-select {
+            background-color: white;
+            color: #333;
+            border: 2px solid var(--eci-green);
+            border-radius: 50px;
+            padding: 12px 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            outline: none;
+            cursor: pointer;
+            max-width: 220px;
+            transition: border-color 0.2s;
+        }
+
+        .filter-select:focus {
+            border-color: #fcc419;
         }
 
         #status {
@@ -201,13 +232,24 @@
     </header>
 
     <div id="status">Cargando planificación...</div>
+    
     <div class="container" id="app-container" style="display: none;"></div>
 
-    <button class="floating-btn" id="btn-hoy" onclick="scrollToToday()">HOY</button>
+    <div class="controls-wrapper" id="controls-panel" style="display: none;">
+        <select class="filter-select" id="worker-filter" onchange="filterWorker(this.value)">
+            <option value="ALL">🔍 Mostrar Todos</option>
+        </select>
+
+        <button class="floating-btn" id="btn-hoy" onclick="scrollToToday()">HOY</button>
+    </div>
 
     <script>
         const csvUrl = 'datos.csv';
-        let todayWeekBlockElement = null;
+        
+        // Almacenamiento global de datos procesados
+        let globalRecords = [];
+        let todayStr = "";
+        let todayWeekBlockElement = null; 
 
         async function init() {
             try {
@@ -215,9 +257,27 @@
                 if (!response.ok) throw new Error('No se pudo acceder al archivo CSV');
                 
                 const dataText = await response.text();
-                const records = parseCSV(dataText);
+                globalRecords = parseCSV(dataText);
                 
-                renderWeeks(records);
+                // Obtener fecha de hoy en formato local YYYY-MM-DD
+                const offset = new Date().getTimezoneOffset();
+                const localDate = new Date(new Date().getTime() - (offset * 60 * 1000));
+                todayStr = localDate.toISOString().split('T')[0];
+
+                // Ordenar registros por fecha cronológica antes de hacer nada
+                globalRecords.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
+
+                // Poblar el filtro desplegable y renderizar por defecto
+                populateFilter(globalRecords);
+                renderWeeks(globalRecords);
+                
+                // Mostrar la interfaz una vez procesado todo
+                document.getElementById('status').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+                document.getElementById('controls-panel').style.display = 'flex';
+
+                // Auto-scroll inicial a la semana en curso
+                scrollToToday(false);
             } catch (error) {
                 document.getElementById('status').innerText = 'Error: ' + error.message;
             }
@@ -248,6 +308,27 @@
             return records;
         }
 
+        // Extrae nombres únicos del CSV para armar el menú del filtro automáticamente
+        function populateFilter(records) {
+            const filterEl = document.getElementById('worker-filter');
+            const namesSet = new Set();
+
+            records.forEach(r => {
+                if (r.manana && r.manana !== '-') namesSet.add(r.manana);
+                if (r.tarde && r.tarde !== '-') namesSet.add(r.tarde);
+            });
+
+            // Ordenar alfabéticamente
+            const sortedNames = Array.from(namesSet).sort((a, b) => a.localeCompare(b));
+
+            sortedNames.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.innerText = name;
+                filterEl.appendChild(option);
+            });
+        }
+
         function getWeekIdentifier(date) {
             const target = new Date(date.valueOf());
             const dayNr = (date.getDay() + 6) % 7; 
@@ -261,19 +342,11 @@
             return { year: target.getFullYear(), week: weekNum };
         }
 
-        function getLocalDateString(date) {
-            const offset = date.getTimezoneOffset();
-            const localDate = new Date(date.getTime() - (offset * 60 * 1000));
-            return localDate.toISOString().split('T')[0];
-        }
-
+        // RENDERIZADO 1: Vista normal agrupada por bloques semanales (Lunes a Sábado)
         function renderWeeks(records) {
             const containerEl = document.getElementById('app-container');
-            const statusEl = document.getElementById('status');
-            
-            const todayStr = getLocalDateString(new Date());
-
-            records.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
+            containerEl.innerHTML = ""; // Limpiar pantalla
+            todayWeekBlockElement = null;
 
             const weeksMap = {};
 
@@ -283,7 +356,7 @@
                 const dateObj = new Date(record.dateStr + 'T00:00:00');
                 const dayOfWeek = dateObj.getDay(); 
 
-                if (dayOfWeek === 0) return;
+                if (dayOfWeek === 0) return; // Omitir domingos
 
                 const { year, week } = getWeekIdentifier(dateObj);
                 const weekKey = `${year}-W${week}`;
@@ -341,11 +414,72 @@
                     todayWeekBlockElement = weekBlock;
                 }
             });
+        }
 
-            statusEl.style.display = 'none';
-            containerEl.style.display = 'block';
+        // RENDERIZADO 2: Vista filtrada por un empleado específico
+        function renderFilteredList(workerName) {
+            const containerEl = document.getElementById('app-container');
+            containerEl.innerHTML = ""; // Limpiar pantalla
 
-            scrollToToday(false);
+            const block = document.createElement('div');
+            block.className = 'week-block';
+
+            const title = document.createElement('div');
+            title.className = 'week-title';
+            title.innerText = `Días asignados a: ${workerName}`;
+            block.appendChild(title);
+
+            // Filtrar registros donde aparezca el nombre seleccionado
+            const filteredRecords = globalRecords.filter(r => r.manana === workerName || r.tarde === workerName);
+
+            if (filteredRecords.length === 0) {
+                block.innerHTML += `<div style="padding:15px; text-align:center; color:#777;">No se encontraron turnos asignados.</div>`;
+                containerEl.appendChild(block);
+                return;
+            }
+
+            filteredRecords.forEach(record => {
+                const dateObj = new Date(record.dateStr + 'T00:00:00');
+                const row = document.createElement('div');
+                row.className = 'day-row';
+
+                const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
+                const dayDateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+
+                let isToday = (record.dateStr === todayStr);
+                if (isToday) row.classList.add('today');
+
+                // Si la persona está en mañanas o tardes, se resalta levemente su nombre en negrita
+                const displayManana = record.manana === workerName ? `<strong>${record.manana}</strong>` : record.manana;
+                const displayTarde = record.tarde === workerName ? `<strong>${record.tarde}</strong>` : record.tarde;
+
+                row.innerHTML = `
+                    <div class="cell cell-date">
+                        <span class="day-name">${dayName}</span>
+                        <div>${dayDateStr}</div>
+                        ${isToday ? '<span class="today-tag">HOY</span>' : ''}
+                    </div>
+                    <div class="cell cell-morning">${displayManana || '-'}</div>
+                    <div class="cell cell-afternoon">${displayTarde || '-'}</div>
+                `;
+                block.appendChild(row);
+            });
+
+            containerEl.appendChild(block);
+        }
+
+        // Gestiona el cambio del selector
+        function filterWorker(value) {
+            const btnHoy = document.getElementById('btn-hoy');
+            if (value === 'ALL') {
+                btnHoy.style.display = 'block'; // Mostrar botón HOY
+                renderWeeks(globalRecords);     // Regresar a vista semanal organizada
+                scrollToToday(true);
+            } else {
+                btnHoy.style.display = 'none';  // Ocultar botón HOY en vista de filtro individual
+                renderFilteredList(value);      // Generar listado del empleado
+                window.scrollTo({ top: 0, behavior: 'smooth' }); // Llevar arriba al filtrar
+            }
         }
 
         function scrollToToday(smooth = true) {
@@ -354,8 +488,6 @@
                     behavior: smooth ? 'smooth' : 'auto', 
                     block: 'start' 
                 });
-            } else {
-                console.log("La semana actual no se encuentra entre los registros del CSV.");
             }
         }
 
