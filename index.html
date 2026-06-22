@@ -182,9 +182,8 @@
             pointer-events: auto;
         }
 
-        /* BOTÓN FLOTANTE HOY */
+        /* BOTÓN FLOTANTE ACCIÓN (HOY / TODOS) */
         .floating-btn {
-            background-color: var(--eci-green);
             color: white;
             border: none;
             border-radius: 50px;
@@ -193,21 +192,34 @@
             font-size: 1rem;
             font-weight: bold;
             letter-spacing: 0.5px;
-            box-shadow: 0 4px 15px rgba(0, 103, 55, 0.3);
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.2s, background-color 0.2s;
+            transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
             padding: 0;
+        }
+
+        /* Estado HOY (Verde) */
+        .floating-btn.state-hoy {
+            background-color: var(--eci-green);
+            box-shadow: 0 4px 15px rgba(0, 103, 55, 0.3);
+        }
+        .floating-btn.state-hoy:hover {
+            background-color: #00522c;
+        }
+
+        /* Estado TODOS (Azul) */
+        .floating-btn.state-todos {
+            background-color: var(--solid-blue);
+            box-shadow: 0 4px 15px rgba(0, 86, 179, 0.3);
+        }
+        .floating-btn.state-todos:hover {
+            background-color: #004085;
         }
 
         .floating-btn:active {
             transform: scale(0.95);
-        }
-
-        .floating-btn:hover {
-            background-color: #00522c;
         }
 
         /* CONTENEDOR DE FILTRO SIMÉTRICO */
@@ -291,7 +303,7 @@
             </select>
         </div>
 
-        <button class="floating-btn" id="btn-hoy" onclick="scrollToToday()">HOY</button>
+        <button class="floating-btn state-hoy" id="btn-action" onclick="handleActionButton()">HOY</button>
     </div>
 
     <script>
@@ -300,6 +312,7 @@
         let globalRecords = [];
         let todayStr = "";
         let todayWeekBlockElement = null; 
+        let currentFilterMode = "ALL"; // Guarda el estado actual del filtro
 
         async function init() {
             try {
@@ -353,12 +366,10 @@
             return records;
         }
 
-        // CAMBIO: Exclusión estricta de los nombres innecesarios del desplegable
         function populateFilter(records) {
             const filterEl = document.getElementById('worker-filter');
             const namesSet = new Set();
             
-            // Lista negra (limpiamos acentos de forma nativa para evitar fallos por tildes en el CSV)
             const excludedNames = ["ALVARO", "ESTEFANIA", "FRANCISCO"];
             const cleanStr = str => str.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
@@ -514,7 +525,6 @@
                     const rowTimestamp = dateObj.getTime();
                     let isToday = (record.dateStr === todayStr);
 
-                    // Foco en la fecha actual o FUTURA más cercana
                     if (rowTimestamp >= currentTimestamp) {
                         const timeDiff = rowTimestamp - currentTimestamp;
                         if (timeDiff < minTimeDifference) {
@@ -557,19 +567,37 @@
             }
         }
 
+        // CAMBIO: Al cambiar el filtro, actualizamos el aspecto y la acción del botón flotante
         function filterWorker(value) {
-            const btnHoy = document.getElementById('btn-hoy');
+            currentFilterMode = value;
+            const btnAction = document.getElementById('btn-action');
+            
             if (value === 'ALL') {
-                btnHoy.style.display = 'flex'; 
+                // Modo Normal: Muestra semanas completas y botón actúa como HOY (Verde)
+                btnAction.innerText = "HOY";
+                btnAction.className = "floating-btn state-hoy";
                 renderWeeks(globalRecords);     
                 scrollToToday(true);
             } else {
-                btnHoy.style.display = 'none';  
+                // Modo Filtrado: Muestra turnos de un compañero y botón actúa como TODOS (Azul)
+                btnAction.innerText = "TODOS";
+                btnAction.className = "floating-btn state-todos";
                 renderFilteredList(value);      
             }
         }
 
-        // Corrección de bug visual heredado en pantallas de móvil con scrollIntoView
+        // CAMBIO: Nueva función encargada de manejar el clic en el botón flotante según el contexto
+        function handleActionButton() {
+            if (currentFilterMode === 'ALL') {
+                // Si no hay filtro activo, hace scroll al día de hoy
+                scrollToToday(true);
+            } else {
+                // Si hay un filtro activo, resetea la aplicación y vuelve a mostrar todo
+                document.getElementById('worker-filter').value = 'ALL';
+                filterWorker('ALL');
+            }
+        }
+
         function scrollToToday(smooth = true) {
             if (todayWeekBlockElement) {
                 todayWeekBlockElement.scrollIntoView({ 
