@@ -210,7 +210,7 @@
             background-color: #00522c;
         }
 
-        /* CONTENEDOR DE FILTRO SIMÉTRICO AL DE HOY */
+        /* CONTENEDOR DE FILTRO SIMÉTRICO */
         .filter-container {
             position: relative;
             background-color: var(--solid-blue);
@@ -228,7 +228,7 @@
             transform: scale(0.95);
         }
 
-        /* ICONO DE FILTRO (Símbolo de tres líneas) */
+        /* ICONO DE FILTRO */
         .filter-icon {
             font-size: 1.1rem;
             color: white;
@@ -353,22 +353,21 @@
             return records;
         }
 
-        // CAMBIO: Excluye nombres innecesarios del filtro desplegable
+        // CAMBIO: Exclusión estricta de los nombres innecesarios del desplegable
         function populateFilter(records) {
             const filterEl = document.getElementById('worker-filter');
             const namesSet = new Set();
             
-            // Lista negra de nombres a ignorar (en mayúsculas para evitar fallos de formato)
-            const excludedNames = ["ÁLVARO", "ESTEFANÍA", "FRANCISCO"];
+            // Lista negra (limpiamos acentos de forma nativa para evitar fallos por tildes en el CSV)
+            const excludedNames = ["ALVARO", "ESTEFANIA", "FRANCISCO"];
+            const cleanStr = str => str.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
             records.forEach(r => {
                 if (r.manana && r.manana !== '-') {
-                    const nameUpper = r.manana.trim().toUpperCase();
-                    if (!excludedNames.includes(nameUpper)) namesSet.add(r.manana.trim());
+                    if (!excludedNames.includes(cleanStr(r.manana))) namesSet.add(r.manana.trim());
                 }
                 if (r.tarde && r.tarde !== '-') {
-                    const nameUpper = r.tarde.trim().toUpperCase();
-                    if (!excludedNames.includes(nameUpper)) namesSet.add(r.tarde.trim());
+                    if (!excludedNames.includes(cleanStr(r.tarde))) namesSet.add(r.tarde.trim());
                 }
             });
 
@@ -468,7 +467,6 @@
             });
         }
 
-        // CAMBIO: Resalta y centra sólo el día actual o el turno FUTURO más próximo
         function renderFilteredList(workerName) {
             const containerEl = document.getElementById('app-container');
             containerEl.innerHTML = ""; 
@@ -516,9 +514,9 @@
                     const rowTimestamp = dateObj.getTime();
                     let isToday = (record.dateStr === todayStr);
 
-                    // LOGICA DE AUTO-ENFOQUE: Solo busca diferencias si es hoy o una fecha en el futuro (rowTimestamp >= currentTimestamp)
+                    // Foco en la fecha actual o FUTURA más cercana
                     if (rowTimestamp >= currentTimestamp) {
-                        const timeDiff = rowTimestamp - currentTimestamp; // Al ser futuro siempre es positivo o 0
+                        const timeDiff = rowTimestamp - currentTimestamp;
                         if (timeDiff < minTimeDifference) {
                             minTimeDifference = timeDiff;
                             closestRowElement = row;
@@ -571,6 +569,7 @@
             }
         }
 
+        // Corrección de bug visual heredado en pantallas de móvil con scrollIntoView
         function scrollToToday(smooth = true) {
             if (todayWeekBlockElement) {
                 todayWeekBlockElement.scrollIntoView({ 
