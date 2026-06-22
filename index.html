@@ -163,7 +163,7 @@
             margin-top: 4px;
         }
 
-        /* CONTENEDOR DE BOTONES FIJOS ABAJO (CONTROL DE MÁRGENES EN PC) */
+        /* CONTENEDOR DE BOTONES FIJOS ABAJO */
         .controls-wrapper {
             position: fixed;
             bottom: 25px;
@@ -174,7 +174,7 @@
             align-items: center;
             pointer-events: none; 
             z-index: 200;
-            padding: 0 15px;
+            padding: 0 20px;
             box-sizing: border-box;
         }
 
@@ -182,19 +182,24 @@
             pointer-events: auto;
         }
 
-        /* BOTÓN FLOTANTE HOY (Vuelve a tu diseño original alargado) */
+        /* BOTÓN FLOTANTE HOY (Con dimensiones fijas para simetría) */
         .floating-btn {
             background-color: var(--eci-green);
             color: white;
             border: none;
             border-radius: 50px;
-            padding: 14px 24px;
+            width: 110px;
+            height: 50px;
             font-size: 1rem;
             font-weight: bold;
             letter-spacing: 0.5px;
             box-shadow: 0 4px 15px rgba(0, 103, 55, 0.3);
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: transform 0.2s, background-color 0.2s;
+            padding: 0;
         }
 
         .floating-btn:active {
@@ -205,12 +210,13 @@
             background-color: #00522c;
         }
 
-        /* CONTENEDOR DE FILTRO CON ALTURA Y DISEÑO EN CONSONANCIA AL BOTÓN HOY */
+        /* CONTENEDOR DE FILTRO (Exactamente del mismo tamaño que el de HOY) */
         .filter-container {
             position: relative;
             background-color: var(--solid-blue);
             border-radius: 50px;
-            padding: 14px 20px;
+            width: 110px;
+            height: 50px;
             box-shadow: 0 4px 15px rgba(0, 86, 179, 0.3);
             display: flex;
             align-items: center;
@@ -222,12 +228,22 @@
             transform: scale(0.95);
         }
 
-        /* ICONO DE EMBUDO/FILTRADO CORRECTO */
+        /* ICONO DE FILTRO (Símbolo de niveles/filtro limpio) */
         .filter-icon {
             font-size: 1.1rem;
             color: white;
-            pointer-events: none; /* Crucial para que el toque abra el select subyacente */
-            display: inline-block;
+            pointer-events: none; 
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* Añadimos la palabra corta al lado del icono para rellenar el botón igual que HOY */
+        .filter-icon::after {
+            content: "FILTRO";
+            font-size: 0.95rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
         }
 
         /* EL SELECT SE AJUSTA INVISIBLE SOBRE EL BOTÓN */
@@ -270,7 +286,7 @@
 
     <div class="controls-wrapper" id="controls-panel" style="display: none;">
         <div class="filter-container">
-            <span class="filter-icon">🔍</span>
+            <span class="filter-icon">☰ </span>
             <select class="filter-select" id="worker-filter" onchange="filterWorker(this.value)">
                 <option value="ALL">Todos</option>
             </select>
@@ -313,6 +329,7 @@
             }
         }
 
+        // ... El resto del JavaScript se mantiene exactamente igual ...
         function parseCSV(text) {
             const lines = text.split(/\r?\n/);
             if (lines.length <= 1) return [];
@@ -534,7 +551,7 @@
         function filterWorker(value) {
             const btnHoy = document.getElementById('btn-hoy');
             if (value === 'ALL') {
-                btnHoy.style.display = 'block'; 
+                btnHoy.style.display = 'flex'; 
                 renderWeeks(globalRecords);     
                 scrollToToday(true);
             } else {
