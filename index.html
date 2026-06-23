@@ -50,12 +50,12 @@
             font-weight: 700;
         }
 
-        /* wrapper-global con el espacio milimétrico adaptado */
+        /* wrapper-global con espacio mínimo optimizado */
         .wrapper-global {
             margin-top: 80px;
             width: 100%;
             max-width: 650px;
-            padding: 0 8px 0 20px; /* Hueco optimizado para la firma lateral */
+            padding: 0 8px 0 14px; 
             box-sizing: border-box;
             position: relative;
             display: flex;
@@ -266,7 +266,7 @@
             letter-spacing: 0.5px;
         }
 
-        /* EL SELECT SE AJUSTA INVISIBLE SOBRE EL BOTÓN */
+        /* REDISEÑO ESTÉTICO DEL SELECT Y SUS OPCIONES */
         .filter-select {
             position: absolute;
             top: 0;
@@ -281,9 +281,17 @@
         }
 
         .filter-select option {
-            background-color: white;
-            color: #333;
-            font-weight: normal;
+            background-color: #ffffff;
+            color: #2d3748;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 14px;
+        }
+
+        .filter-select option:checked {
+            background-color: var(--blue-cell) !important;
+            color: var(--solid-blue);
         }
 
         #status {
@@ -293,26 +301,28 @@
             color: #666;
         }
 
-        /* FIRMA OPTIMIZADA: Dirección de abajo a arriba, fija y a 4px de la tabla */
+        /* FIRMA OPTIMIZADA: Totalmente congelada y estática sin saltos en móviles */
         footer {
             position: fixed;
-            left: calc(50% - 325px); /* Posicionado exactamente a 4px de la tabla (650 / 2 = 325) */
+            left: calc(50% - 329px); 
             top: 50%;
-            transform: translateY(-50%) rotate(180deg); /* Invierte la dirección para leer de abajo a arriba */
+            /* translateZ(0) fuerza el renderizado por hardware de la GPU, evitando vibraciones al hacer scroll */
+            transform: translateY(-50%) rotate(180deg) translateZ(0);
+            will-change: transform;
             writing-mode: vertical-lr;
             font-size: 0.72rem;
-            color: #b2bec3;
+            color: #cbd5e1; 
             font-weight: 600;
             letter-spacing: 1px;
             white-space: nowrap;
             z-index: 50;
             pointer-events: none;
-            padding-right: 4px; /* Margen de protección para los trazos inferiores de las letras */
+            padding-right: 2px;
         }
 
         @media (max-width: 670px) {
             footer {
-                left: 4px; /* Se mantiene perfectamente arrimada y visible en pantallas móviles estrechas */
+                left: 1px; /* Fijado firme al ras de la pantalla móvil */
             }
         }
     </style>
