@@ -57,7 +57,7 @@
             max-width: 650px;
             padding: 12px;
             box-sizing: border-box;
-            padding-bottom: 100px; 
+            padding-bottom: 20px; 
         }
 
         /* Cada bloque que contiene una semana o un año de filtro */
@@ -283,6 +283,19 @@
             font-weight: bold;
             color: #666;
         }
+
+        /* ESTILO PARA LA FIRMA */
+        footer {
+            text-align: center;
+            margin-top: 10px;
+            margin-bottom: 110px; /* Margen extra para que no lo tapen los botones flotantes */
+            font-size: 0.85rem;
+            color: #888;
+            font-weight: 500;
+            width: 100%;
+            max-width: 650px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body>
@@ -294,6 +307,10 @@
     <div id="status">Cargando planificación...</div>
     
     <div class="container" id="app-container" style="display: none;"></div>
+
+    <footer id="app-footer" style="display: none;">
+        Desarrollado por Ben A. M. &copy; <span id="copyright-years">2026</span>
+    </footer>
 
     <div class="controls-wrapper" id="controls-panel" style="display: none;">
         <div class="filter-container">
@@ -334,6 +351,11 @@
                 document.getElementById('status').style.display = 'none';
                 document.getElementById('app-container').style.display = 'block';
                 document.getElementById('controls-panel').style.display = 'flex';
+                
+                // LÓGICA DINÁMICA DEL AÑO DE FIRMA
+                document.getElementById('app-footer').style.display = 'block';
+                const currentYear = new Date().getFullYear();
+                document.getElementById('copyright-years').innerText = currentYear > 2026 ? `2026 - ${currentYear}` : `2026`;
 
                 scrollToToday(false);
             } catch (error) {
