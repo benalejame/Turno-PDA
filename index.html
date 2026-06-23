@@ -51,7 +51,7 @@
             font-weight: 700;
         }
 
-        /* wrapper-global convertido en el anclaje físico de la firma */
+        /* wrapper-global con espacio mínimo optimizado */
         .wrapper-global {
             margin-top: 80px;
             width: 100%;
@@ -254,7 +254,7 @@
             transform: scale(0.95);
         }
 
-        /* NUEVA VENTANA MODAL ESTILIZADA PARA FILTRAR TRABAJADORES */
+        /* VENTANA MODAL ESTILIZADA PARA FILTRAR TRABAJADORES */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -354,13 +354,12 @@
             color: #666;
         }
 
-        /* SOLUCIÓN DE CONGELACIÓN: Firma absoluta anclada a la pantalla a través del Viewport */
+        /* SOLUCIÓN DE ULTRA-CONGELACIÓN: Firma estricta anclada mediante un Viewport rígido sin traslaciones dinámicas */
         footer {
             position: fixed;
-            /* Se calcula desde el centro de la pantalla restando la mitad exacta de la tabla + 4px de margen */
             left: calc(50% - 325px); 
-            top: 50%;
-            transform: translateY(-50%) rotate(180deg);
+            top: 25vh; /* Usamos una altura de viewport fija e invariable ante la barra de direcciones */
+            transform: rotate(180deg);
             writing-mode: vertical-lr;
             font-size: 0.72rem;
             color: #cbd5e1; 
@@ -369,12 +368,12 @@
             white-space: nowrap;
             z-index: 50;
             pointer-events: none;
-            padding-right: 4px;
+            padding-right: 2px;
         }
 
         @media (max-width: 670px) {
             footer {
-                left: 4px; /* Pegado definitivo en el borde físico de pantallas móviles estrechas */
+                left: 1px; /* Pegado absoluto y rígido al lateral de la ventana del móvil */
             }
         }
     </style>
@@ -398,7 +397,7 @@
     <div class="modal-overlay" id="filterModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Seleccionar Compañero</h3>
+                <h3>Seleccionar Nombre</h3>
                 <button class="btn-close-modal" onclick="cerrarFiltroModal()">&times;</button>
             </div>
             <div class="workers-grid-list" id="modal-workers-list">
@@ -478,7 +477,6 @@
             return records;
         }
 
-        // NUEVA FUNCIÓN: Construye los botones de nombres de la ventana flotante
         function populateFilterModal(records) {
             const modalListEl = document.getElementById('modal-workers-list');
             modalListEl.innerHTML = '';
@@ -498,7 +496,6 @@
 
             const sortedNames = Array.from(namesSet).sort((a, b) => a.localeCompare(b));
 
-            // Opción por defecto para restaurar la vista
             const allBtn = document.createElement('button');
             allBtn.className = 'worker-option-btn active';
             allBtn.id = 'worker-btn-ALL';
@@ -525,7 +522,6 @@
         }
 
         function seleccionarTrabajadorFiltro(workerName) {
-            // Actualiza los estados activos visuales de la ventana flotante
             document.querySelectorAll('.worker-option-btn').forEach(btn => btn.classList.remove('active'));
             document.getElementById(`worker-btn-${workerName}`).classList.add('active');
             
@@ -728,7 +724,6 @@
             if (currentFilterMode === 'ALL') {
                 scrollToToday(true);
             } else {
-                // Restaura visualmente el modal a 'Todos'
                 document.querySelectorAll('.worker-option-btn').forEach(btn => btn.classList.remove('active'));
                 document.getElementById('worker-btn-ALL').classList.add('active');
                 filterWorker('ALL');
