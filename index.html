@@ -50,21 +50,21 @@
             font-weight: 700;
         }
 
-        /* ESTRUCTURA ADAPTADA: Contenedor global centrado */
+        /* AJUSTE: Contenedor global ceñido a la izquierda */
         .wrapper-global {
             margin-top: 80px;
             width: 100%;
             max-width: 650px;
-            padding: 0 12px;
+            padding: 0 8px 0 24px; /* Deja el espacio justo y milimétrico para la firma lateral */
             box-sizing: border-box;
             position: relative;
             display: flex;
-            justify-content: flex-end; /* Alinea los bloques a la derecha dejando hueco a la firma */
+            justify-content: flex-end;
         }
 
         /* Contenedor de bloques semanales y filtrados */
         .container {
-            width: calc(100% - 30px); /* Resta el espacio exacto que ocupa la firma lateral */
+            width: 100%;
             box-sizing: border-box;
             padding-bottom: 110px; 
         }
@@ -293,14 +293,14 @@
             color: #666;
         }
 
-        /* NUEVA UBICACIÓN PARA LA FIRMA: Izquierda, vertical, fija en pantalla y pegada a los datos */
+        /* FIRMA OPTIMIZADA: Arrimada a la tabla para evitar huecos en pantallas móviles */
         footer {
             position: fixed;
-            left: calc(50% - 325px); /* Se alinea justo al borde izquierdo del bloque central max-width: 650 */
+            left: calc(50% - 322px); 
             top: 50%;
             transform: translateY(-50%) rotate(-90deg);
             transform-origin: left center;
-            font-size: 0.72rem; /* Tamaño compacto ideal para móviles */
+            font-size: 0.72rem;
             color: #b2bec3;
             font-weight: 600;
             letter-spacing: 1px;
@@ -309,10 +309,9 @@
             pointer-events: none;
         }
 
-        /* Adaptación en móviles dinámicos para que no se salga de la pantalla por la izquierda */
         @media (max-width: 670px) {
             footer {
-                left: 2px; /* Se queda pegada de forma fija en el extremo izquierdo de los móviles */
+                left: 4px; /* Pegado inmediato al borde en móviles */
             }
         }
     </style>
@@ -326,7 +325,7 @@
     <div id="status">Cargando planificación...</div>
     
     <footer id="app-footer" style="display: none;">
-        Desarrollado por Ben A. M. &copy; <span id="copyright-years">2026</span>
+        Ben A. M. &copy; <span id="copyright-years">2026</span>
     </footer>
 
     <div class="wrapper-global">
@@ -373,7 +372,6 @@
                 document.getElementById('app-container').style.display = 'block';
                 document.getElementById('controls-panel').style.display = 'flex';
                 
-                // LÓGICA DINÁMICA DEL AÑO DE FIRMA (A partir de 2026)
                 document.getElementById('app-footer').style.display = 'block';
                 const currentYear = new Date().getFullYear();
                 document.getElementById('copyright-years').innerText = currentYear > 2026 ? `2026 - ${currentYear}` : `2026`;
