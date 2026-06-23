@@ -29,6 +29,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            height: 100vh;
         }
 
         header {
@@ -50,12 +51,12 @@
             font-weight: 700;
         }
 
-        /* wrapper-global con espacio mínimo optimizado */
+        /* wrapper-global convertido en el anclaje físico de la firma */
         .wrapper-global {
             margin-top: 80px;
             width: 100%;
             max-width: 650px;
-            padding: 0 8px 0 14px; 
+            padding: 0 8px 0 18px; 
             box-sizing: border-box;
             position: relative;
             display: flex;
@@ -181,10 +182,10 @@
             display: flex;
             justify-content: space-between; 
             align-items: center;
-            pointer-events: none; 
             z-index: 200;
             padding: 0 20px;
             box-sizing: border-box;
+            pointer-events: none;
         }
 
         .controls-wrapper * {
@@ -209,7 +210,6 @@
             padding: 0;
         }
 
-        /* Estado HOY (Verde) */
         .floating-btn.state-hoy {
             background-color: var(--eci-green);
             box-shadow: 0 4px 15px rgba(0, 103, 55, 0.3);
@@ -218,7 +218,6 @@
             background-color: #00522c;
         }
 
-        /* Estado TODOS (Azul) */
         .floating-btn.state-todos {
             background-color: var(--solid-blue);
             box-shadow: 0 4px 15px rgba(0, 86, 179, 0.3);
@@ -231,9 +230,8 @@
             transform: scale(0.95);
         }
 
-        /* CONTENEDOR DE FILTRO SIMÉTRICO */
-        .filter-container {
-            position: relative;
+        /* BOTÓN DE FILTRO ACTIVO */
+        .filter-btn-trigger {
             background-color: var(--solid-blue);
             border-radius: 50px;
             width: 110px;
@@ -242,56 +240,111 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            border: none;
+            cursor: pointer;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            gap: 4px;
             transition: transform 0.2s, background-color 0.2s;
         }
 
-        .filter-container:active {
+        .filter-btn-trigger:active {
             transform: scale(0.95);
         }
 
-        /* ICONO DE FILTRO */
-        .filter-icon {
-            font-size: 1.1rem;
-            color: white;
-            pointer-events: none; 
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        
-        .filter-icon::after {
-            content: "FILTRO";
-            font-size: 0.95rem;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-        }
-
-        /* REDISEÑO ESTÉTICO DEL SELECT Y SUS OPCIONES */
-        .filter-select {
-            position: absolute;
+        /* NUEVA VENTANA MODAL ESTILIZADA PARA FILTRAR TRABAJADORES */
+        .modal-overlay {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            opacity: 0;
-            cursor: pointer;
-            appearance: none; 
-            -webkit-appearance: none;
-            -moz-appearance: none;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 300;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
-        .filter-select option {
-            background-color: #ffffff;
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            position: relative;
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #f1f3f5;
+            padding-bottom: 10px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
             color: #2d3748;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 1rem;
-            font-weight: 600;
-            padding: 14px;
+            font-weight: 700;
         }
 
-        .filter-select option:checked {
-            background-color: var(--blue-cell) !important;
+        .btn-close-modal {
+            background: none;
+            border: none;
+            font-size: 1.6rem;
+            color: #a0aec0;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .btn-close-modal:hover {
+            color: #e53e3e;
+        }
+
+        .workers-grid-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 260px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        /* Estilo de los botones internos del modal */
+        .worker-option-btn {
+            width: 100%;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .worker-option-btn:hover, .worker-option-btn.active {
+            background-color: var(--blue-cell);
             color: var(--solid-blue);
+            border-color: var(--blue-border);
         }
 
         #status {
@@ -301,14 +354,13 @@
             color: #666;
         }
 
-        /* FIRMA OPTIMIZADA: Totalmente congelada y estática sin saltos en móviles */
+        /* SOLUCIÓN DE CONGELACIÓN: Firma absoluta anclada a la pantalla a través del Viewport */
         footer {
             position: fixed;
-            left: calc(50% - 329px); 
+            /* Se calcula desde el centro de la pantalla restando la mitad exacta de la tabla + 4px de margen */
+            left: calc(50% - 325px); 
             top: 50%;
-            /* translateZ(0) fuerza el renderizado por hardware de la GPU, evitando vibraciones al hacer scroll */
-            transform: translateY(-50%) rotate(180deg) translateZ(0);
-            will-change: transform;
+            transform: translateY(-50%) rotate(180deg);
             writing-mode: vertical-lr;
             font-size: 0.72rem;
             color: #cbd5e1; 
@@ -317,12 +369,12 @@
             white-space: nowrap;
             z-index: 50;
             pointer-events: none;
-            padding-right: 2px;
+            padding-right: 4px;
         }
 
         @media (max-width: 670px) {
             footer {
-                left: 1px; /* Fijado firme al ras de la pantalla móvil */
+                left: 4px; /* Pegado definitivo en el borde físico de pantallas móviles estrechas */
             }
         }
     </style>
@@ -343,13 +395,21 @@
         <div class="container" id="app-container" style="display: none;"></div>
     </div>
 
-    <div class="controls-wrapper" id="controls-panel" style="display: none;">
-        <div class="filter-container">
-            <span class="filter-icon">☰ </span>
-            <select class="filter-select" id="worker-filter" onchange="filterWorker(this.value)">
-                <option value="ALL">Todos</option>
-            </select>
+    <div class="modal-overlay" id="filterModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Seleccionar Compañero</h3>
+                <button class="btn-close-modal" onclick="cerrarFiltroModal()">&times;</button>
+            </div>
+            <div class="workers-grid-list" id="modal-workers-list">
+                </div>
         </div>
+    </div>
+
+    <div class="controls-wrapper" id="controls-panel" style="display: none;">
+        <button class="filter-btn-trigger" onclick="abrirFiltroModal()">
+            <span>☰</span> FILTRO
+        </button>
 
         <button class="floating-btn state-hoy" id="btn-action" onclick="handleActionButton()">HOY</button>
     </div>
@@ -376,7 +436,7 @@
 
                 globalRecords.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
 
-                populateFilter(globalRecords);
+                populateFilterModal(globalRecords);
                 renderWeeks(globalRecords);
                 
                 document.getElementById('status').style.display = 'none';
@@ -418,10 +478,12 @@
             return records;
         }
 
-        function populateFilter(records) {
-            const filterEl = document.getElementById('worker-filter');
-            const namesSet = new Set();
+        // NUEVA FUNCIÓN: Construye los botones de nombres de la ventana flotante
+        function populateFilterModal(records) {
+            const modalListEl = document.getElementById('modal-workers-list');
+            modalListEl.innerHTML = '';
             
+            const namesSet = new Set();
             const excludedNames = ["ALVARO", "ESTEFANIA", "FRANCISCO"];
             const cleanStr = str => str.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
@@ -436,12 +498,39 @@
 
             const sortedNames = Array.from(namesSet).sort((a, b) => a.localeCompare(b));
 
+            // Opción por defecto para restaurar la vista
+            const allBtn = document.createElement('button');
+            allBtn.className = 'worker-option-btn active';
+            allBtn.id = 'worker-btn-ALL';
+            allBtn.innerText = 'Todos';
+            allBtn.onclick = () => seleccionarTrabajadorFiltro('ALL');
+            modalListEl.appendChild(allBtn);
+
             sortedNames.forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.innerText = name;
-                filterEl.appendChild(option);
+                const btn = document.createElement('button');
+                btn.className = 'worker-option-btn';
+                btn.id = `worker-btn-${name}`;
+                btn.innerText = name;
+                btn.onclick = () => seleccionarTrabajadorFiltro(name);
+                modalListEl.appendChild(btn);
             });
+        }
+
+        function abrirFiltroModal() {
+            document.getElementById('filterModal').style.display = 'flex';
+        }
+
+        function cerrarFiltroModal() {
+            document.getElementById('filterModal').style.display = 'none';
+        }
+
+        function seleccionarTrabajadorFiltro(workerName) {
+            // Actualiza los estados activos visuales de la ventana flotante
+            document.querySelectorAll('.worker-option-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`worker-btn-${workerName}`).classList.add('active');
+            
+            cerrarFiltroModal();
+            filterWorker(workerName);
         }
 
         function getWeekIdentifier(date) {
@@ -639,7 +728,9 @@
             if (currentFilterMode === 'ALL') {
                 scrollToToday(true);
             } else {
-                document.getElementById('worker-filter').value = 'ALL';
+                // Restaura visualmente el modal a 'Todos'
+                document.querySelectorAll('.worker-option-btn').forEach(btn => btn.classList.remove('active'));
+                document.getElementById('worker-btn-ALL').classList.add('active');
                 filterWorker('ALL');
             }
         }
