@@ -50,12 +50,12 @@
             font-weight: 700;
         }
 
-        /* AJUSTE: Contenedor global ceñido a la izquierda */
+        /* wrapper-global con espacio mínimo optimizado */
         .wrapper-global {
             margin-top: 80px;
             width: 100%;
             max-width: 650px;
-            padding: 0 8px 0 24px; /* Deja el espacio justo y milimétrico para la firma lateral */
+            padding: 0 8px 0 16px; /* Ajustado al mínimo para acercar la firma al bloque */
             box-sizing: border-box;
             position: relative;
             display: flex;
@@ -293,10 +293,10 @@
             color: #666;
         }
 
-        /* FIRMA OPTIMIZADA: Arrimada a la tabla para evitar huecos en pantallas móviles */
+        /* FIRMA REDISEÑADA: Súper pegada y con padding izquierdo para evitar cortes */
         footer {
             position: fixed;
-            left: calc(50% - 322px); 
+            left: calc(50% - 324px); 
             top: 50%;
             transform: translateY(-50%) rotate(-90deg);
             transform-origin: left center;
@@ -307,11 +307,12 @@
             white-space: nowrap;
             z-index: 50;
             pointer-events: none;
+            padding-left: 6px; /* Margen interno de seguridad para evitar que se corte la primera letra */
         }
 
         @media (max-width: 670px) {
             footer {
-                left: 4px; /* Pegado inmediato al borde en móviles */
+                left: 0px; /* Al límite de la pantalla móvil manteniendo el padding interno de seguridad */
             }
         }
     </style>
