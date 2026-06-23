@@ -57,7 +57,7 @@
             max-width: 650px;
             padding: 12px;
             box-sizing: border-box;
-            padding-bottom: 20px; 
+            padding-bottom: 110px; /* Espacio inferior para evitar solapamiento con controles */
         }
 
         /* Cada bloque que contiene una semana o un año de filtro */
@@ -284,17 +284,27 @@
             color: #666;
         }
 
-        /* ESTILO PARA LA FIRMA */
+        /* MODIFICACIÓN DE LA FIRMA SIDEBAR ESTÁTICA */
         footer {
-            text-align: center;
-            margin-top: 10px;
-            margin-bottom: 110px; /* Margen extra para que no lo tapen los botones flotantes */
+            position: fixed;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%) rotate(90deg);
+            transform-origin: right center;
             font-size: 0.85rem;
-            color: #888;
+            color: #a0aec0;
             font-weight: 500;
-            width: 100%;
-            max-width: 650px;
-            box-sizing: border-box;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        /* Ocultar en pantallas donde el contenedor ocupe todo el ancho para evitar colisión */
+        @media (max-width: 900px) {
+            footer {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -329,7 +339,7 @@
         let globalRecords = [];
         let todayStr = "";
         let todayWeekBlockElement = null; 
-        let currentFilterMode = "ALL"; // Guarda el estado actual del filtro
+        let currentFilterMode = "ALL"; 
 
         async function init() {
             try {
@@ -589,32 +599,26 @@
             }
         }
 
-        // CAMBIO: Al cambiar el filtro, actualizamos el aspecto y la acción del botón flotante
         function filterWorker(value) {
             currentFilterMode = value;
             const btnAction = document.getElementById('btn-action');
             
             if (value === 'ALL') {
-                // Modo Normal: Muestra semanas completas y botón actúa como HOY (Verde)
                 btnAction.innerText = "HOY";
                 btnAction.className = "floating-btn state-hoy";
                 renderWeeks(globalRecords);     
                 scrollToToday(true);
             } else {
-                // Modo Filtrado: Muestra turnos de un compañero y botón actúa como TODOS (Azul)
                 btnAction.innerText = "TODOS";
                 btnAction.className = "floating-btn state-todos";
                 renderFilteredList(value);      
             }
         }
 
-        // CAMBIO: Nueva función encargada de manejar el clic en el botón flotante según el contexto
         function handleActionButton() {
             if (currentFilterMode === 'ALL') {
-                // Si no hay filtro activo, hace scroll al día de hoy
                 scrollToToday(true);
             } else {
-                // Si hay un filtro activo, resetea la aplicación y vuelve a mostrar todo
                 document.getElementById('worker-filter').value = 'ALL';
                 filterWorker('ALL');
             }
