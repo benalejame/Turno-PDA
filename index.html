@@ -50,12 +50,12 @@
             font-weight: 700;
         }
 
-        /* wrapper-global con espacio mínimo optimizado */
+        /* wrapper-global con el espacio milimétrico adaptado */
         .wrapper-global {
             margin-top: 80px;
             width: 100%;
             max-width: 650px;
-            padding: 0 8px 0 22px; /* Espacio exacto para la firma vertical */
+            padding: 0 8px 0 20px; /* Hueco optimizado para la firma lateral */
             box-sizing: border-box;
             position: relative;
             display: flex;
@@ -293,13 +293,13 @@
             color: #666;
         }
 
-        /* NUEVA FIRMA NATIVA VERTICAL SIN ROTACIONES: Súper pegada y sin cortes */
+        /* FIRMA OPTIMIZADA: Dirección de abajo a arriba, fija y a 4px de la tabla */
         footer {
             position: fixed;
-            left: calc(50% - 321px); 
+            left: calc(50% - 325px); /* Posicionado exactamente a 4px de la tabla (650 / 2 = 325) */
             top: 50%;
-            transform: translateY(-50%);
-            writing-mode: vertical-lr; /* Escritura vertical nativa del navegador */
+            transform: translateY(-50%) rotate(180deg); /* Invierte la dirección para leer de abajo a arriba */
+            writing-mode: vertical-lr;
             font-size: 0.72rem;
             color: #b2bec3;
             font-weight: 600;
@@ -307,12 +307,12 @@
             white-space: nowrap;
             z-index: 50;
             pointer-events: none;
-            padding-left: 5px; /* Margen de seguridad estricto para evitar cortes */
+            padding-right: 4px; /* Margen de protección para los trazos inferiores de las letras */
         }
 
         @media (max-width: 670px) {
             footer {
-                left: 2px; /* Pegado absoluto y limpio al borde de la pantalla en móviles */
+                left: 4px; /* Se mantiene perfectamente arrimada y visible en pantallas móviles estrechas */
             }
         }
     </style>
