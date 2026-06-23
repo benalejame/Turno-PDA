@@ -55,7 +55,7 @@
             margin-top: 80px;
             width: 100%;
             max-width: 650px;
-            padding: 0 8px 0 16px; /* Ajustado al mínimo para acercar la firma al bloque */
+            padding: 0 8px 0 22px; /* Espacio exacto para la firma vertical */
             box-sizing: border-box;
             position: relative;
             display: flex;
@@ -293,13 +293,13 @@
             color: #666;
         }
 
-        /* FIRMA REDISEÑADA: Súper pegada y con padding izquierdo para evitar cortes */
+        /* NUEVA FIRMA NATIVA VERTICAL SIN ROTACIONES: Súper pegada y sin cortes */
         footer {
             position: fixed;
-            left: calc(50% - 324px); 
+            left: calc(50% - 321px); 
             top: 50%;
-            transform: translateY(-50%) rotate(-90deg);
-            transform-origin: left center;
+            transform: translateY(-50%);
+            writing-mode: vertical-lr; /* Escritura vertical nativa del navegador */
             font-size: 0.72rem;
             color: #b2bec3;
             font-weight: 600;
@@ -307,12 +307,12 @@
             white-space: nowrap;
             z-index: 50;
             pointer-events: none;
-            padding-left: 6px; /* Margen interno de seguridad para evitar que se corte la primera letra */
+            padding-left: 5px; /* Margen de seguridad estricto para evitar cortes */
         }
 
         @media (max-width: 670px) {
             footer {
-                left: 0px; /* Al límite de la pantalla móvil manteniendo el padding interno de seguridad */
+                left: 2px; /* Pegado absoluto y limpio al borde de la pantalla en móviles */
             }
         }
     </style>
