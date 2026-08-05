@@ -438,23 +438,23 @@
         // REGISTRO ULTRA SIMPLE DE CUMPLEAÑOS (NOMBRE = DD-MM)
         const CUMPLEANOS_LISTA = `
             ALBA = 23-07
-ALVARO = 16-08
-BEN = 15-08
-CELIA = 29-03
-EDU = 06-06
-FRAN = 16-09
-GRACIELA = 15-04
-IGLESIAS = 11-08
-JIMENA = 
-JORGE = 
-JUANMA = 
-MARTA = 15-03
-OLGA = 01-06
-PACHA = 17-01
-PACO = 01-12
-RAUL = 15-03
-ROBER = 27-10
-ROSA = 23-02
+            ALVARO = 16-08
+            BEN = 15-08
+            CELIA = 29-03
+            EDU = 06-06
+            FRAN = 16-09
+            GRACIELA = 15-04
+            IGLESIAS = 11-08
+            JIMENA = 
+            JORGE = 
+            JUANMA = 
+            MARTA = 15-03
+            OLGA = 01-06
+            PACHA = 17-01
+            PACO = 01-12
+            RAUL = 15-03
+            ROBER = 27-10
+            ROSA = 23-02
         `;
         
         let globalRecords = [];
@@ -468,12 +468,12 @@ ROSA = 23-02
                 if (!response.ok) throw new Error('No se pudo acceder al archivo CSV');
                 
                 const dataText = await response.text();
-                globalRecords = parseCSV(dataText);
                 
                 const offset = new Date().getTimezoneOffset();
                 const localDate = new Date(new Date().getTime() - (offset * 60 * 1000));
                 todayStr = localDate.toISOString().split('T')[0];
 
+                globalRecords = parseCSV(dataText);
                 globalRecords.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
 
                 populateFilterModal(globalRecords);
@@ -498,14 +498,19 @@ ROSA = 23-02
             const dayMonth = `${day}-${month}`;
 
             const lineas = CUMPLEANOS_LISTA.trim().split('\n');
+            const cumpleaneros = [];
+
             for (const linea of lineas) {
                 if (!linea.includes('=')) continue;
                 const [nombre, fecha] = linea.split('=').map(s => s.trim());
-                if (fecha === dayMonth) {
-                    return nombre;
+                if (fecha && fecha === dayMonth) {
+                    cumpleaneros.push(nombre);
                 }
             }
-            return null;
+
+            if (cumpleaneros.length === 0) return null;
+            if (cumpleaneros.length === 1) return cumpleaneros[0];
+            return cumpleaneros.join(' y ');
         }
 
         function getBirthdayNamesList() {
@@ -563,7 +568,6 @@ ROSA = 23-02
                 }
             });
 
-            // Incluir nombres que están registrados en la lista CUMPLEANOS_LISTA
             getBirthdayNamesList().forEach(nombre => {
                 if (!excludedNames.includes(cleanStr(nombre))) {
                     namesSet.add(nombre);
@@ -630,10 +634,11 @@ ROSA = 23-02
                 
                 const dateObj = new Date(record.dateStr + 'T00:00:00');
                 const dayOfWeek = dateObj.getDay(); 
-                const hasBirthday = !!record.cumple;
+                const isToday = (record.dateStr === todayStr);
+                const hasBirthdayToday = isToday && !!record.cumple;
 
-                // Omitir domingos si no coinciden con un cumpleaños
-                if (dayOfWeek === 0 && !hasBirthday) return; 
+                // Omitir domingos a menos que sea HOY y sea el cumpleaños de alguien
+                if (dayOfWeek === 0 && !hasBirthdayToday) return; 
 
                 const { year, week } = getWeekIdentifier(dateObj);
                 const weekKey = `${year}-W${String(week).padStart(2, '0')}`;
@@ -673,7 +678,8 @@ ROSA = 23-02
                         containsToday = true;
                     }
 
-                    const birthdayHTML = record.cumple 
+                    // SOLO MUESTRA LA FELICITACIÓN SI LA FECHA ES HOY
+                    const birthdayHTML = (isToday && record.cumple)
                         ? `<div class="birthday-banner">🎉 ¡¡¡Feliz cumpleaños ${record.cumple}!!! 🎂</div>` 
                         : '';
 
@@ -705,15 +711,13 @@ ROSA = 23-02
             containerEl.innerHTML = ""; 
 
             const filteredRecords = globalRecords.filter(r => 
-                r.manana === workerName || 
-                r.tarde === workerName || 
-                (r.cumple && r.cumple.toUpperCase() === workerName.toUpperCase())
+                r.manana === workerName || r.tarde === workerName
             );
 
             if (filteredRecords.length === 0) {
                 const emptyBlock = document.createElement('div');
                 emptyBlock.className = 'week-block';
-                emptyBlock.innerHTML = `<div style="padding:15px; text-align:center; color:#777;">No se encontraron registros ni cumpleaños asignados.</div>`;
+                emptyBlock.innerHTML = `<div style="padding:15px; text-align:center; color:#777;">No se encontraron turnos asignados.</div>`;
                 containerEl.appendChild(emptyBlock);
                 return;
             }
@@ -737,7 +741,7 @@ ROSA = 23-02
 
                 const yearTitle = document.createElement('div');
                 yearTitle.className = 'week-title';
-                yearTitle.innerText = `Año ${year} — Asignaciones / Eventos`;
+                yearTitle.innerText = `Año ${year} — Asignaciones`;
                 yearBlock.appendChild(yearTitle);
 
                 yearsMap[year].forEach(record => {
@@ -767,7 +771,8 @@ ROSA = 23-02
                         `<strong>${record.tarde}</strong>` : 
                         `<span class="muted-worker">${record.tarde || '-'}</span>`;
 
-                    const birthdayHTML = record.cumple 
+                    // SOLO MUESTRA LA FELICITACIÓN SI LA FECHA ES HOY
+                    const birthdayHTML = (isToday && record.cumple)
                         ? `<div class="birthday-banner">🎉 ¡¡¡Feliz cumpleaños ${record.cumple}!!! 🎂</div>` 
                         : '';
 
