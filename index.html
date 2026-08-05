@@ -91,9 +91,10 @@
             text-transform: capitalize;
         }
 
-        /* Estructura de filas simulando celdas */
-        .day-row {
-            display: table;
+        /* Estructura de tarjetas diarias */
+        .day-card {
+            display: flex;
+            flex-direction: column;
             width: 100%;
             margin-bottom: 8px;
             border-radius: 8px;
@@ -102,8 +103,26 @@
             scroll-margin-top: 140px; 
         }
 
+        /* Banner de Cumpleaños */
+        .birthday-banner {
+            background: linear-gradient(90deg, #ff758c 0%, #ff7eb3 100%);
+            color: white;
+            font-weight: bold;
+            font-size: 0.88rem;
+            padding: 6px 10px;
+            text-align: center;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            border-bottom: 1px solid #fecdd3;
+        }
+
+        .day-row-content {
+            display: table;
+            width: 100%;
+        }
+
         /* Resalte de la línea del día actual o más próximo */
-        .day-row.today {
+        .day-card.today {
             border: 2.5px solid var(--today-border);
             box-shadow: 0 0 12px rgba(252, 196, 25, 0.4);
             transform: scale(1.01);
@@ -133,7 +152,7 @@
             margin-bottom: 2px;
         }
 
-        .day-row.today .cell-date {
+        .day-card.today .cell-date {
             background-color: var(--today-bg);
         }
 
@@ -354,11 +373,11 @@
             color: #666;
         }
 
-        /* SOLUCIÓN DE ULTRA-CONGELACIÓN: Firma estricta anclada mediante un Viewport rígido sin traslaciones dinámicas */
+        /* SOLUCIÓN DE ULTRA-CONGELACIÓN */
         footer {
             position: fixed;
             left: calc(50% - 325px); 
-            top: 25vh; /* Usamos una altura de viewport fija e invariable ante la barra de direcciones */
+            top: 25vh;
             transform: rotate(180deg);
             writing-mode: vertical-lr;
             font-size: 0.72rem;
@@ -373,7 +392,7 @@
 
         @media (max-width: 670px) {
             footer {
-                left: 1px; /* Pegado absoluto y rígido al lateral de la ventana del móvil */
+                left: 1px;
             }
         }
     </style>
@@ -401,7 +420,7 @@
                 <button class="btn-close-modal" onclick="cerrarFiltroModal()">&times;</button>
             </div>
             <div class="workers-grid-list" id="modal-workers-list">
-                </div>
+            </div>
         </div>
     </div>
 
@@ -415,6 +434,11 @@
 
     <script>
         const csvUrl = 'datos.csv';
+
+        // REGISTRO ÚNICO DE CUMPLEAÑOS (Formato "MM-DD")
+        const CUMPLEANOS = {
+            "BEN": "08-15"
+        };
         
         let globalRecords = [];
         let todayStr = "";
@@ -452,6 +476,18 @@
             }
         }
 
+        function getBirthdayForDate(dateStr) {
+            const [year, month, day] = dateStr.split('-');
+            const monthDay = `${month}-${day}`;
+
+            for (const [nombre, fechaCumple] of Object.entries(CUMPLEANOS)) {
+                if (fechaCumple === monthDay) {
+                    return nombre;
+                }
+            }
+            return null;
+        }
+
         function parseCSV(text) {
             const lines = text.split(/\r?\n/);
             if (lines.length <= 1) return [];
@@ -467,10 +503,12 @@
 
                 const columns = line.split(';');
                 if (columns.length >= 3) {
+                    const dateStr = columns[idxFecha].trim();
                     records.push({
-                        dateStr: columns[idxFecha].trim(),
+                        dateStr: dateStr,
                         manana: columns[idxMananas].trim(),
-                        tarde: columns[idxTardes].trim()
+                        tarde: columns[idxTardes].trim(),
+                        cumple: getBirthdayForDate(dateStr)
                     });
                 }
             }
@@ -491,6 +529,13 @@
                 }
                 if (r.tarde && r.tarde !== '-') {
                     if (!excludedNames.includes(cleanStr(r.tarde))) namesSet.add(r.tarde.trim());
+                }
+            });
+
+            // Incluir nombres que están registrados en la constante CUMPLEANOS
+            Object.keys(CUMPLEANOS).forEach(nombre => {
+                if (!excludedNames.includes(cleanStr(nombre))) {
+                    namesSet.add(nombre.trim());
                 }
             });
 
@@ -554,8 +599,10 @@
                 
                 const dateObj = new Date(record.dateStr + 'T00:00:00');
                 const dayOfWeek = dateObj.getDay(); 
+                const hasBirthday = !!record.cumple;
 
-                if (dayOfWeek === 0) return; 
+                // Si cae en domingo y no hay cumpleaños, no se muestra
+                if (dayOfWeek === 0 && !hasBirthday) return; 
 
                 const { year, week } = getWeekIdentifier(dateObj);
                 const weekKey = `${year}-W${String(week).padStart(2, '0')}`;
@@ -583,28 +630,35 @@
                 let containsToday = false;
 
                 weekData.days.forEach(({ record, dateObj }) => {
-                    const row = document.createElement('div');
-                    row.className = 'day-row';
+                    const dayCard = document.createElement('div');
+                    dayCard.className = 'day-card';
 
                     const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
                     const dayDateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
 
                     let isToday = (record.dateStr === todayStr);
                     if (isToday) {
-                        row.classList.add('today');
+                        dayCard.classList.add('today');
                         containsToday = true;
                     }
 
-                    row.innerHTML = `
-                        <div class="cell cell-date">
-                            <span class="day-name">${dayName}</span>
-                            <div>${dayDateStr}</div>
-                            ${isToday ? '<span class="today-tag">HOY</span>' : ''}
+                    const birthdayHTML = record.cumple 
+                        ? `<div class="birthday-banner">🎉 Feliz cumpleaños ${record.cumple}!!! 🎂</div>` 
+                        : '';
+
+                    dayCard.innerHTML = `
+                        ${birthdayHTML}
+                        <div class="day-row-content">
+                            <div class="cell cell-date">
+                                <span class="day-name">${dayName}</span>
+                                <div>${dayDateStr}</div>
+                                ${isToday ? '<span class="today-tag">HOY</span>' : ''}
+                            </div>
+                            <div class="cell cell-morning">${record.manana || '-'}</div>
+                            <div class="cell cell-afternoon">${record.tarde || '-'}</div>
                         </div>
-                        <div class="cell cell-morning">${record.manana || '-'}</div>
-                        <div class="cell cell-afternoon">${record.tarde || '-'}</div>
                     `;
-                    weekBlock.appendChild(row);
+                    weekBlock.appendChild(dayCard);
                 });
 
                 containerEl.appendChild(weekBlock);
@@ -619,12 +673,16 @@
             const containerEl = document.getElementById('app-container');
             containerEl.innerHTML = ""; 
 
-            const filteredRecords = globalRecords.filter(r => r.manana === workerName || r.tarde === workerName);
+            const filteredRecords = globalRecords.filter(r => 
+                r.manana === workerName || 
+                r.tarde === workerName || 
+                (r.cumple && r.cumple.toUpperCase() === workerName.toUpperCase())
+            );
 
             if (filteredRecords.length === 0) {
                 const emptyBlock = document.createElement('div');
                 emptyBlock.className = 'week-block';
-                emptyBlock.innerHTML = `<div style="padding:15px; text-align:center; color:#777;">No se encontraron turnos asignados.</div>`;
+                emptyBlock.innerHTML = `<div style="padding:15px; text-align:center; color:#777;">No se encontraron registros ni cumpleaños asignados.</div>`;
                 containerEl.appendChild(emptyBlock);
                 return;
             }
@@ -648,13 +706,13 @@
 
                 const yearTitle = document.createElement('div');
                 yearTitle.className = 'week-title';
-                yearTitle.innerText = `Año ${year} — Asignaciones`;
+                yearTitle.innerText = `Año ${year} — Asignaciones / Eventos`;
                 yearBlock.appendChild(yearTitle);
 
                 yearsMap[year].forEach(record => {
                     const dateObj = new Date(record.dateStr + 'T00:00:00');
-                    const row = document.createElement('div');
-                    row.className = 'day-row';
+                    const dayCard = document.createElement('div');
+                    dayCard.className = 'day-card';
 
                     const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'long' });
                     const dayDateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
@@ -666,7 +724,7 @@
                         const timeDiff = rowTimestamp - currentTimestamp;
                         if (timeDiff < minTimeDifference) {
                             minTimeDifference = timeDiff;
-                            closestRowElement = row;
+                            closestRowElement = dayCard;
                         }
                     }
 
@@ -678,16 +736,23 @@
                         `<strong>${record.tarde}</strong>` : 
                         `<span class="muted-worker">${record.tarde || '-'}</span>`;
 
-                    row.innerHTML = `
-                        <div class="cell cell-date">
-                            <span class="day-name">${dayName}</span>
-                            <div>${dayDateStr}</div>
-                            ${isToday ? '<span class="today-tag">HOY</span>' : ''}
+                    const birthdayHTML = record.cumple 
+                        ? `<div class="birthday-banner">🎉 Feliz cumpleaños ${record.cumple}!!! 🎂</div>` 
+                        : '';
+
+                    dayCard.innerHTML = `
+                        ${birthdayHTML}
+                        <div class="day-row-content">
+                            <div class="cell cell-date">
+                                <span class="day-name">${dayName}</span>
+                                <div>${dayDateStr}</div>
+                                ${isToday ? '<span class="today-tag">HOY</span>' : ''}
+                            </div>
+                            <div class="cell cell-morning">${displayManana}</div>
+                            <div class="cell cell-afternoon">${displayTarde}</div>
                         </div>
-                        <div class="cell cell-morning">${displayManana}</div>
-                        <div class="cell cell-afternoon">${displayTarde}</div>
                     `;
-                    yearBlock.appendChild(row);
+                    yearBlock.appendChild(dayCard);
                 });
 
                 containerEl.appendChild(yearBlock);
