@@ -558,7 +558,7 @@
                 if (dayOfWeek === 0) return; 
 
                 const { year, week } = getWeekIdentifier(dateObj);
-                const weekKey = `${year}-W${week}`;
+                const weekKey = `${year}-W${String(week).padStart(2, '0')}`;
 
                 if (!weeksMap[weekKey]) {
                     weeksMap[weekKey] = {
