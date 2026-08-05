@@ -435,10 +435,27 @@
     <script>
         const csvUrl = 'datos.csv';
 
-        // REGISTRO ÚNICO DE CUMPLEAÑOS (Formato "MM-DD")
-        const CUMPLEANOS = {
-            "BEN": "08-15"
-        };
+        // REGISTRO ULTRA SIMPLE DE CUMPLEAÑOS (NOMBRE = DD-MM)
+        const CUMPLEANOS_LISTA = `
+            ALBA = 23-07
+ALVARO = 16-08
+BEN = 15-08
+CELIA = 29-03
+EDU = 06-06
+FRAN = 16-09
+GRACIELA = 15-04
+IGLESIAS = 11-08
+JIMENA = 
+JORGE = 
+JUANMA = 
+MARTA = 15-03
+OLGA = 01-06
+PACHA = 17-01
+PACO = 01-12
+RAUL = 15-03
+ROBER = 27-10
+ROSA = 23-02
+        `;
         
         let globalRecords = [];
         let todayStr = "";
@@ -478,14 +495,28 @@
 
         function getBirthdayForDate(dateStr) {
             const [year, month, day] = dateStr.split('-');
-            const monthDay = `${month}-${day}`;
+            const dayMonth = `${day}-${month}`;
 
-            for (const [nombre, fechaCumple] of Object.entries(CUMPLEANOS)) {
-                if (fechaCumple === monthDay) {
+            const lineas = CUMPLEANOS_LISTA.trim().split('\n');
+            for (const linea of lineas) {
+                if (!linea.includes('=')) continue;
+                const [nombre, fecha] = linea.split('=').map(s => s.trim());
+                if (fecha === dayMonth) {
                     return nombre;
                 }
             }
             return null;
+        }
+
+        function getBirthdayNamesList() {
+            const nombres = [];
+            const lineas = CUMPLEANOS_LISTA.trim().split('\n');
+            for (const linea of lineas) {
+                if (!linea.includes('=')) continue;
+                const [nombre] = linea.split('=').map(s => s.trim());
+                if (nombre) nombres.push(nombre);
+            }
+            return nombres;
         }
 
         function parseCSV(text) {
@@ -532,10 +563,10 @@
                 }
             });
 
-            // Incluir nombres que están registrados en la constante CUMPLEANOS
-            Object.keys(CUMPLEANOS).forEach(nombre => {
+            // Incluir nombres que están registrados en la lista CUMPLEANOS_LISTA
+            getBirthdayNamesList().forEach(nombre => {
                 if (!excludedNames.includes(cleanStr(nombre))) {
-                    namesSet.add(nombre.trim());
+                    namesSet.add(nombre);
                 }
             });
 
@@ -601,7 +632,7 @@
                 const dayOfWeek = dateObj.getDay(); 
                 const hasBirthday = !!record.cumple;
 
-                // Si cae en domingo y no hay cumpleaños, no se muestra
+                // Omitir domingos si no coinciden con un cumpleaños
                 if (dayOfWeek === 0 && !hasBirthday) return; 
 
                 const { year, week } = getWeekIdentifier(dateObj);
@@ -643,7 +674,7 @@
                     }
 
                     const birthdayHTML = record.cumple 
-                        ? `<div class="birthday-banner">🎉 Feliz cumpleaños ${record.cumple}!!! 🎂</div>` 
+                        ? `<div class="birthday-banner">🎉 ¡¡¡Feliz cumpleaños ${record.cumple}!!! 🎂</div>` 
                         : '';
 
                     dayCard.innerHTML = `
@@ -737,7 +768,7 @@
                         `<span class="muted-worker">${record.tarde || '-'}</span>`;
 
                     const birthdayHTML = record.cumple 
-                        ? `<div class="birthday-banner">🎉 Feliz cumpleaños ${record.cumple}!!! 🎂</div>` 
+                        ? `<div class="birthday-banner">🎉 ¡¡¡Feliz cumpleaños ${record.cumple}!!! 🎂</div>` 
                         : '';
 
                     dayCard.innerHTML = `
