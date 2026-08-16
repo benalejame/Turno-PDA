@@ -8,16 +8,16 @@
     <style>
         :root {
             --primary-blue: #007bff;
-            --blue-cell: #e6f2ff; /* Sombreado azul claro para mañanas */
+            --blue-cell: #e6f2ff;
             --blue-border: #b3d7ff;
-            --green-cell: #e6f7ed; /* Sombreado verde claro para tardes */
+            --green-cell: #e6f7ed;
             --green-border: #b3f0cc;
-            --today-bg: #fff9db;   /* Fondo sutil para el día de hoy */
-            --today-border: #fcc419; /* Borde dorado/amarillo para resaltar */
+            --today-bg: #fff9db;
+            --today-border: #fcc419;
             --card-bg: #ffffff;
             --text-color: #333;
-            --eci-green: #006737;  /* Verde oficial de El Corte Inglés */
-            --solid-blue: #0056b3; /* Azul sólido para el botón de filtro */
+            --eci-green: #006737;
+            --solid-blue: #0056b3;
         }
 
         body {
@@ -51,7 +51,6 @@
             font-weight: 700;
         }
 
-        /* wrapper-global con espacio mínimo optimizado */
         .wrapper-global {
             margin-top: 80px;
             width: 100%;
@@ -63,14 +62,12 @@
             justify-content: flex-end;
         }
 
-        /* Contenedor de bloques semanales y filtrados */
         .container {
             width: 100%;
             box-sizing: border-box;
             padding-bottom: 110px; 
         }
 
-        /* Cada bloque que contiene una semana o un año de filtro */
         .week-block {
             background: #ffffff;
             border-radius: 12px;
@@ -91,7 +88,6 @@
             text-transform: capitalize;
         }
 
-        /* Estructura de tarjetas diarias */
         .day-card {
             display: flex;
             flex-direction: column;
@@ -103,7 +99,6 @@
             scroll-margin-top: 140px; 
         }
 
-        /* Banner de Cumpleaños */
         .birthday-banner {
             background: linear-gradient(90deg, #ff758c 0%, #ff7eb3 100%);
             color: white;
@@ -121,7 +116,6 @@
             width: 100%;
         }
 
-        /* Resalte de la línea del día actual o más próximo */
         .day-card.today {
             border: 2.5px solid var(--today-border);
             box-shadow: 0 0 12px rgba(252, 196, 25, 0.4);
@@ -135,7 +129,6 @@
             font-size: 0.95rem;
         }
 
-        /* Columna 1: Fecha y Día de la semana */
         .cell-date {
             width: 30%;
             background-color: #f1f3f5;
@@ -156,7 +149,6 @@
             background-color: var(--today-bg);
         }
 
-        /* Columna 2: MAÑANAS (Sombreado Azul Claro) */
         .cell-morning {
             width: 35%;
             background-color: var(--blue-cell);
@@ -165,7 +157,6 @@
             color: #1c3d5a;
         }
 
-        /* Columna 3: TARDES (Sombreado Verde Claro) */
         .cell-afternoon {
             width: 35%;
             background-color: var(--green-cell);
@@ -173,14 +164,12 @@
             color: #1e4620;
         }
 
-        /* Clase para atenuar de forma sutil el nombre del compañero no seleccionado */
         .muted-worker {
             color: #7f8c8d;
             font-weight: normal;
             opacity: 0.65;
         }
 
-        /* Etiqueta para el día actual o próximo */
         .today-tag {
             background-color: var(--today-border);
             color: #212529;
@@ -192,7 +181,6 @@
             margin-top: 4px;
         }
 
-        /* CONTENEDOR DE BOTONES FIJOS ABAJO */
         .controls-wrapper {
             position: fixed;
             bottom: 25px;
@@ -211,7 +199,6 @@
             pointer-events: auto;
         }
 
-        /* BOTÓN FLOTANTE ACCIÓN (HOY / TODOS) */
         .floating-btn {
             color: white;
             border: none;
@@ -249,7 +236,6 @@
             transform: scale(0.95);
         }
 
-        /* BOTÓN DE FILTRO ACTIVO */
         .filter-btn-trigger {
             background-color: var(--solid-blue);
             border-radius: 50px;
@@ -273,7 +259,6 @@
             transform: scale(0.95);
         }
 
-        /* VENTANA MODAL ESTILIZADA PARA FILTRAR TRABAJADORES */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -345,7 +330,6 @@
             padding-right: 4px;
         }
 
-        /* Estilo de los botones internos del modal */
         .worker-option-btn {
             width: 100%;
             padding: 12px;
@@ -373,7 +357,6 @@
             color: #666;
         }
 
-        /* SOLUCIÓN DE ULTRA-CONGELACIÓN */
         footer {
             position: fixed;
             left: calc(50% - 325px); 
@@ -435,7 +418,6 @@
     <script>
         const csvUrl = 'datos.csv';
 
-        // REGISTRO ULTRA SIMPLE DE CUMPLEAÑOS (NOMBRE = DD-MM)
         const CUMPLEANOS_LISTA = `
             ALBA = 23-07
             ALVARO = 16-08
@@ -474,6 +456,18 @@
                 todayStr = localDate.toISOString().split('T')[0];
 
                 globalRecords = parseCSV(dataText);
+
+                // Si hoy no está en el CSV (ej: domingo sin turnos), lo añadimos para que se visualice
+                const existsToday = globalRecords.some(r => r.dateStr === todayStr);
+                if (!existsToday) {
+                    globalRecords.push({
+                        dateStr: todayStr,
+                        manana: '-',
+                        tarde: '-',
+                        cumple: getBirthdayForDate(todayStr)
+                    });
+                }
+
                 globalRecords.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
 
                 populateFilterModal(globalRecords);
@@ -487,7 +481,7 @@
                 const currentYear = new Date().getFullYear();
                 document.getElementById('copyright-years').innerText = currentYear > 2026 ? `2026 - ${currentYear}` : `2026`;
 
-                scrollToToday(false);
+                setTimeout(() => scrollToToday(false), 50);
             } catch (error) {
                 document.getElementById('status').innerText = 'Error: ' + error.message;
             }
@@ -611,12 +605,12 @@
 
         function getWeekIdentifier(date) {
             const target = new Date(date.valueOf());
-            const dayNr = (date.getDay() + 6) % 7; 
+            const dayNr = (date.getDay() === 0 ? 7 : date.getDay()) - 1; // 0 = Lunes, 6 = Domingo
             target.setDate(target.getDate() - dayNr + 3);
             const firstThursday = target.valueOf();
             target.setMonth(0, 1);
             if (target.getDay() !== 4) {
-                target.setMonth(0, 1 + ((4 - target.getDay() + 7) % 7));
+                target.setMonth(0, 1 + (((4 - target.getDay()) + 7) % 7));
             }
             const weekNum = 1 + Math.ceil((firstThursday - target) / 604800000);
             return { year: target.getFullYear(), week: weekNum };
@@ -635,10 +629,9 @@
                 const dateObj = new Date(record.dateStr + 'T00:00:00');
                 const dayOfWeek = dateObj.getDay(); 
                 const isToday = (record.dateStr === todayStr);
-                const hasBirthdayToday = isToday && !!record.cumple;
 
-                // Omitir domingos a menos que sea HOY y sea el cumpleaños de alguien
-                if (dayOfWeek === 0 && !hasBirthdayToday) return; 
+                // Omitir domingos anteriores o futuros a menos que sea HOY
+                if (dayOfWeek === 0 && !isToday) return; 
 
                 const { year, week } = getWeekIdentifier(dateObj);
                 const weekKey = `${year}-W${String(week).padStart(2, '0')}`;
@@ -678,7 +671,6 @@
                         containsToday = true;
                     }
 
-                    // SOLO MUESTRA LA FELICITACIÓN SI LA FECHA ES HOY
                     const birthdayHTML = (isToday && record.cumple)
                         ? `<div class="birthday-banner">🎉 ¡¡¡Feliz cumpleaños ${record.cumple}!!! 🎂</div>` 
                         : '';
@@ -710,9 +702,13 @@
             const containerEl = document.getElementById('app-container');
             containerEl.innerHTML = ""; 
 
-            const filteredRecords = globalRecords.filter(r => 
-                r.manana === workerName || r.tarde === workerName
-            );
+            const cleanFilter = workerName.trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            const filteredRecords = globalRecords.filter(r => {
+                const cleanM = (r.manana || '').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const cleanT = (r.tarde || '').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return cleanM === cleanFilter || cleanT === cleanFilter;
+            });
 
             if (filteredRecords.length === 0) {
                 const emptyBlock = document.createElement('div');
@@ -763,15 +759,17 @@
                         }
                     }
 
-                    const displayManana = record.manana === workerName ? 
+                    const cleanM = (record.manana || '').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                    const cleanT = (record.tarde || '').trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+                    const displayManana = cleanM === cleanFilter ? 
                         `<strong>${record.manana}</strong>` : 
                         `<span class="muted-worker">${record.manana || '-'}</span>`;
                         
-                    const displayTarde = record.tarde === workerName ? 
+                    const displayTarde = cleanT === cleanFilter ? 
                         `<strong>${record.tarde}</strong>` : 
                         `<span class="muted-worker">${record.tarde || '-'}</span>`;
 
-                    // SOLO MUESTRA LA FELICITACIÓN SI LA FECHA ES HOY
                     const birthdayHTML = (isToday && record.cumple)
                         ? `<div class="birthday-banner">🎉 ¡¡¡Feliz cumpleaños ${record.cumple}!!! 🎂</div>` 
                         : '';
